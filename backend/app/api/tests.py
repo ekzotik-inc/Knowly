@@ -6,7 +6,7 @@ import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.dependencies import CurrentUser
@@ -21,6 +21,7 @@ from app.db.models import (
     User,
 )
 from app.db.session import get_db
+from app.services.payments import user_has_entitlement
 
 router = APIRouter(prefix="/api/v1", tags=["tests"])
 
@@ -87,7 +88,15 @@ class ReviewItem(BaseModel):
 
 
 class ResultDetail(ResultResponse):
+    review_locked: bool
     review: list[ReviewItem]
+
+
+class StatisticsResponse(BaseModel):
+    tests_count: int
+    attempts_count: int
+    average_percentage: int
+    best_percentage: int | None
 
 
 def _new_public_token() -> str:
@@ -322,6 +331,11 @@ async def get_result(
     result = await db.get(TestResult, result_id)
     if result is None or current_user.id not in {result.owner_id, result.participant_user_id}:
         raise HTTPException(status_code=404, detail="Результат не найден")
+    review_locked = current_user.id != result.owner_id and not await user_has_entitlement(
+        db,
+        user_id=current_user.id,
+        entitlement_key="premium_results",
+    )
     rows = await db.execute(select(ResultAnswer).where(ResultAnswer.result_id == result.id).order_by(ResultAnswer.id))
     return ResultDetail(
         result_id=result.id,
@@ -329,10 +343,28 @@ async def get_result(
         correct_answers=result.correct_answers,
         total_questions=result.total_questions,
         percentage=result.percentage,
-        review=[ReviewItem(
+        review_locked=review_locked,
+        review=[] if review_locked else [ReviewItem(
             question_id=item.question_id,
             selected_option=item.selected_option,
             correct_option=item.correct_option,
             is_correct=item.is_correct,
         ) for item in rows.scalars()],
+    )
+
+
+@router.get("/statistics/me", response_model=StatisticsResponse)
+async def get_my_statistics(
+    current_user: CurrentUser,
+    db: AsyncSession = Depends(get_db),
+) -> StatisticsResponse:
+    tests_count = int((await db.execute(select(func.count(Test.id)).where(Test.owner_id == current_user.id))).scalar_one())
+    attempts_count = int((await db.execute(select(func.count(TestResult.id)).where(TestResult.owner_id == current_user.id))).scalar_one())
+    average = await db.scalar(select(func.avg(TestResult.percentage)).where(TestResult.owner_id == current_user.id))
+    best = await db.scalar(select(func.max(TestResult.percentage)).where(TestResult.owner_id == current_user.id))
+    return StatisticsResponse(
+        tests_count=tests_count,
+        attempts_count=attempts_count,
+        average_percentage=round(float(average)) if average is not None else 0,
+        best_percentage=int(best) if best is not None else None,
     )
