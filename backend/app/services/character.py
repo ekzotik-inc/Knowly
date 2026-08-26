@@ -14,6 +14,7 @@ Emotion = Literal[
 class CharacterConfig(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
+    gender: Literal["feminine", "masculine", "neutral"] = "feminine"
     personality: Personality = "romantic"
     head_shape: Literal["round", "soft", "sharp"] = "soft"
     skin_tone: Literal["porcelain", "peach", "honey", "almond", "cocoa"] = "peach"

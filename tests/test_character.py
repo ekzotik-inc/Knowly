@@ -33,3 +33,20 @@ def test_result_percentage_selects_emotion_and_pose(percentage, emotion, pose):
     state = character_for_event("romantic", "result", percentage=percentage)
     assert state.emotion == emotion
     assert state.pose == pose
+
+
+@pytest.mark.parametrize("gender", ["feminine", "masculine", "neutral"])
+def test_character_config_accepts_all_gender_variants(gender):
+    from app.services.character import CharacterConfig
+
+    config = CharacterConfig(gender=gender)
+
+    assert config.gender == gender
+
+
+def test_character_config_rejects_unknown_gender():
+    from pydantic import ValidationError
+    from app.services.character import CharacterConfig
+
+    with pytest.raises(ValidationError):
+        CharacterConfig(gender="unknown")

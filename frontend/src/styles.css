@@ -226,8 +226,14 @@ h2 { margin-bottom: 0; font-size: 20px; letter-spacing: -.035em; }
 .character-victory svg { animation: character-victory .7s ease both; }
 .character-cover svg, .character-tilt svg { animation: character-tilt .55s ease both; }
 .character-editor { margin-top: 14px; padding: 15px; border: 1px solid var(--line); border-radius: 18px; background: #201d29cc; }
-.editor-heading { display: flex; justify-content: space-between; margin-bottom: 13px; color: var(--ink); font-size: 13px; }
+.editor-heading { display: flex; justify-content: space-between; margin-bottom: 12px; color: var(--ink); font-size: 13px; }
+.editor-heading strong, .editor-heading small { display: block; }
+.editor-heading small { margin-top: 4px; color: var(--muted-2); font-size: 10px; font-weight: 500; }
 .editor-heading span { color: var(--pink-2); font-size: 9px; font-weight: 900; letter-spacing: .11em; text-transform: uppercase; }
+.gender-switch { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; margin-bottom: 13px; padding: 4px; border: 1px solid #ffffff12; border-radius: 12px; background: #ffffff06; }
+.gender-switch button { min-height: 32px; border-radius: 9px; background: transparent; color: var(--muted-2); font-size: 10px; font-weight: 800; transition: color .18s ease, background .18s ease, transform .18s ease; }
+.gender-switch button.active { background: #ff6d9f1c; color: var(--pink-2); box-shadow: inset 0 0 0 1px #ff6d9f22; }
+.gender-switch button:active { transform: scale(.97); }
 .editor-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
 .editor-grid label { display: grid; gap: 5px; color: var(--muted); font-size: 9px; font-weight: 800; text-transform: capitalize; }
 .editor-grid select { min-width: 0; border: 1px solid #ffffff1c; border-radius: 10px; padding: 9px 7px; outline: none; background: #ffffff08; color: var(--ink); font-size: 10px; }

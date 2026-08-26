@@ -1,4 +1,5 @@
 export type CharacterConfig = {
+  gender: "feminine" | "masculine" | "neutral";
   personality: "cute" | "funny" | "romantic" | "confident" | "mysterious" | "chaotic";
   head_shape: "round" | "soft" | "sharp";
   skin_tone: "porcelain" | "peach" | "honey" | "almond" | "cocoa";
