@@ -1,0 +1,3 @@
+# Render deployment troubleshooting
+
+26 августа 2026: `knowly-api` был создан в Render по URL `https://knowly-api.onrender.com`, но `/health` вернул Render 502 Bad Gateway. Application logs показывают запуск `uvicorn app.main:app --host 0.0.0.0 --port $PORT`, затем Python traceback во время `config.load_app()` и импорта приложения. Причина: `ModuleNotFoundError: No module named 'bot'`, потому что API запускался из `rootDir: backend`, тогда как пакет `bot` находится в корне репозитория. Исправление: API теперь использует `rootDir: .`, устанавливает `backend/requirements.txt` и запускается как `PYTHONPATH=backend uvicorn app.main:app --host 0.0.0.0 --port $PORT`.
