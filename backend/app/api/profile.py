@@ -1,0 +1,55 @@
+from __future__ import annotations
+
+import uuid
+
+from fastapi import APIRouter, Depends
+from pydantic import BaseModel, Field
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.auth.dependencies import CurrentUser
+from app.db.models import Profile
+from app.db.session import get_db
+
+router = APIRouter(prefix="/api/v1/profile", tags=["profile"])
+
+
+class ProfilePayload(BaseModel):
+    display_name: str = Field(min_length=1, max_length=128)
+    avatar_url: str | None = Field(default=None, max_length=512)
+
+
+class ProfileResponse(ProfilePayload):
+    id: uuid.UUID
+
+
+async def _get_or_create_profile(db: AsyncSession, user_id: uuid.UUID, default_name: str) -> Profile:
+    profile = await db.scalar(select(Profile).where(Profile.user_id == user_id))
+    if profile is None:
+        profile = Profile(user_id=user_id, display_name=default_name)
+        db.add(profile)
+        await db.flush()
+    return profile
+
+
+@router.get("", response_model=ProfileResponse)
+async def get_profile(
+    current_user: CurrentUser,
+    db: AsyncSession = Depends(get_db),
+) -> ProfileResponse:
+    profile = await _get_or_create_profile(db, current_user.id, current_user.first_name)
+    await db.commit()
+    return ProfileResponse(id=profile.id, display_name=profile.display_name, avatar_url=profile.avatar_url)
+
+
+@router.put("", response_model=ProfileResponse)
+async def update_profile(
+    payload: ProfilePayload,
+    current_user: CurrentUser,
+    db: AsyncSession = Depends(get_db),
+) -> ProfileResponse:
+    profile = await _get_or_create_profile(db, current_user.id, current_user.first_name)
+    profile.display_name = payload.display_name.strip()
+    profile.avatar_url = payload.avatar_url
+    await db.commit()
+    return ProfileResponse(id=profile.id, display_name=profile.display_name, avatar_url=profile.avatar_url)

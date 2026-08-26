@@ -4,6 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api.auth import router as auth_router
 from app.api.tests import router as tests_router
 from app.api.payments import router as payments_router
+from app.api.profile import router as profile_router
 from app.core.config import settings
 
 
@@ -24,4 +25,5 @@ async def health() -> dict[str, str]:
 
 app.include_router(auth_router)
 app.include_router(payments_router)
+app.include_router(profile_router)
 app.include_router(tests_router)
