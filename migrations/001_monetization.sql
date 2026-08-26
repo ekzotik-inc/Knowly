@@ -149,3 +149,68 @@ CREATE TABLE IF NOT EXISTS session_answers (
     created_at timestamptz NOT NULL DEFAULT now(),
     CONSTRAINT uq_session_answer UNIQUE (session_id, question_id)
 );
+
+
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS locale varchar(8) NOT NULL DEFAULT 'ru';
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS result_visibility varchar(24) NOT NULL DEFAULT 'name';
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS sound_enabled boolean NOT NULL DEFAULT true;
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS haptic_enabled boolean NOT NULL DEFAULT true;
+ALTER TABLE tests ADD COLUMN IF NOT EXISTS privacy_mode varchar(24) NOT NULL DEFAULT 'public';
+ALTER TABLE tests ADD COLUMN IF NOT EXISTS expires_at timestamptz;
+ALTER TABLE tests ADD COLUMN IF NOT EXISTS max_attempts integer;
+ALTER TABLE tests ADD COLUMN IF NOT EXISTS secret_message_80 varchar(500);
+ALTER TABLE tests ADD COLUMN IF NOT EXISTS secret_message_100 varchar(500);
+ALTER TABLE questions ADD COLUMN IF NOT EXISTS difficulty varchar(24) NOT NULL DEFAULT 'easy';
+ALTER TABLE questions ADD COLUMN IF NOT EXISTS is_secret boolean NOT NULL DEFAULT false;
+
+CREATE TABLE IF NOT EXISTS user_progress (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id uuid NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE,
+    xp integer NOT NULL DEFAULT 0,
+    level integer NOT NULL DEFAULT 1,
+    tests_created integer NOT NULL DEFAULT 0,
+    tests_completed integer NOT NULL DEFAULT 0,
+    updated_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS achievements (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    code varchar(64) NOT NULL UNIQUE,
+    title varchar(128) NOT NULL,
+    description varchar(255) NOT NULL,
+    icon varchar(16) NOT NULL,
+    xp_reward integer NOT NULL DEFAULT 0
+);
+
+CREATE TABLE IF NOT EXISTS user_achievements (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    achievement_id uuid NOT NULL REFERENCES achievements(id) ON DELETE RESTRICT,
+    unlocked_at timestamptz NOT NULL DEFAULT now(),
+    CONSTRAINT uq_user_achievement UNIQUE (user_id, achievement_id)
+);
+
+CREATE TABLE IF NOT EXISTS analytics_events (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    event_name varchar(64) NOT NULL,
+    actor_user_id uuid REFERENCES users(id) ON DELETE SET NULL,
+    test_id uuid REFERENCES tests(id) ON DELETE SET NULL,
+    metadata jsonb NOT NULL DEFAULT '{}'::jsonb,
+    created_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS ix_analytics_events_name_created ON analytics_events(event_name, created_at);
+
+INSERT INTO achievements (code, title, description, icon, xp_reward)
+VALUES
+    ('heartbreaker', 'Heartbreaker', 'Твой тест прошли 10 человек.', '💗', 50),
+    ('mind_reader', 'Mind Reader', 'Набрал 100% в чужом тесте.', '🧠', 50),
+    ('bestie', 'Bestie', 'Получил 95%+ от друга.', '👑', 40),
+    ('popular', 'Popular', 'Твой тест прошли 100 человек.', '🔥', 100),
+    ('trickster', 'Trickster', 'Никто не угадал один из твоих вопросов.', '😈', 30),
+    ('too_close', 'Too Close', 'Кто-то набрал 100% в твоём тесте.', '🫣', 30)
+ON CONFLICT (code) DO UPDATE SET
+    title = EXCLUDED.title,
+    description = EXCLUDED.description,
+    icon = EXCLUDED.icon,
+    xp_reward = EXCLUDED.xp_reward;

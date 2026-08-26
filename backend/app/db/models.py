@@ -96,6 +96,10 @@ class Profile(Base):
     display_name: Mapped[str] = mapped_column(String(128))
     avatar_url: Mapped[str | None] = mapped_column(String(512))
     character_config: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
+    locale: Mapped[str] = mapped_column(String(8), default="ru", nullable=False)
+    result_visibility: Mapped[str] = mapped_column(String(24), default="name", nullable=False)
+    sound_enabled: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    haptic_enabled: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
@@ -109,6 +113,11 @@ class Test(Base):
     mode: Mapped[str] = mapped_column(String(64), default="know_me")
     public_token: Mapped[str] = mapped_column(String(32), unique=True, index=True)
     status: Mapped[str] = mapped_column(String(24), default="draft", index=True)
+    privacy_mode: Mapped[str] = mapped_column(String(24), default="public", nullable=False)
+    expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    max_attempts: Mapped[int | None] = mapped_column(Integer)
+    secret_message_80: Mapped[str | None] = mapped_column(String(500))
+    secret_message_100: Mapped[str | None] = mapped_column(String(500))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
@@ -121,7 +130,9 @@ class Question(Base):
     text: Mapped[str] = mapped_column(String(500))
     options: Mapped[list] = mapped_column(JSON)
     correct_option: Mapped[str] = mapped_column(String(255))
+    difficulty: Mapped[str] = mapped_column(String(24), default="easy", nullable=False)
     category: Mapped[str | None] = mapped_column(String(64))
+    is_secret: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
@@ -182,3 +193,47 @@ class SessionAnswer(Base):
     question_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("questions.id", ondelete="RESTRICT"))
     selected_option: Mapped[str] = mapped_column(String(255))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class UserProgress(Base):
+    __tablename__ = "user_progress"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), unique=True)
+    xp: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    level: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
+    tests_created: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    tests_completed: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+
+class Achievement(Base):
+    __tablename__ = "achievements"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    code: Mapped[str] = mapped_column(String(64), unique=True, index=True)
+    title: Mapped[str] = mapped_column(String(128))
+    description: Mapped[str] = mapped_column(String(255))
+    icon: Mapped[str] = mapped_column(String(16))
+    xp_reward: Mapped[int] = mapped_column(Integer, default=0)
+
+
+class UserAchievement(Base):
+    __tablename__ = "user_achievements"
+    __table_args__ = (UniqueConstraint("user_id", "achievement_id", name="uq_user_achievement"),)
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    achievement_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("achievements.id", ondelete="RESTRICT"))
+    unlocked_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class AnalyticsEvent(Base):
+    __tablename__ = "analytics_events"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    event_name: Mapped[str] = mapped_column(String(64), index=True)
+    actor_user_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), index=True)
+    test_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("tests.id", ondelete="SET NULL"), index=True)
+    event_metadata: Mapped[dict] = mapped_column("metadata", JSON, default=dict, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), index=True)

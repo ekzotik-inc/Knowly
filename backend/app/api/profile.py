@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from typing import Literal
 import uuid
 
 from fastapi import APIRouter, Depends
@@ -19,6 +20,10 @@ class ProfilePayload(BaseModel):
     display_name: str = Field(min_length=1, max_length=128)
     avatar_url: str | None = Field(default=None, max_length=512)
     character: CharacterConfig | None = None
+    locale: Literal["ru", "en", "uz"] = "ru"
+    result_visibility: Literal["name", "anonymous", "name_avatar"] = "name"
+    sound_enabled: bool = True
+    haptic_enabled: bool = True
 
 
 class ProfileResponse(ProfilePayload):
@@ -47,6 +52,10 @@ def _response(profile: Profile) -> ProfileResponse:
         display_name=profile.display_name,
         avatar_url=profile.avatar_url,
         character=CharacterConfig.model_validate(profile.character_config or {}),
+        locale=profile.locale,
+        result_visibility=profile.result_visibility,
+        sound_enabled=profile.sound_enabled,
+        haptic_enabled=profile.haptic_enabled,
     )
 
 
@@ -71,5 +80,9 @@ async def update_profile(
     profile.avatar_url = payload.avatar_url
     if payload.character is not None:
         profile.character_config = payload.character.model_dump()
+    profile.locale = payload.locale
+    profile.result_visibility = payload.result_visibility
+    profile.sound_enabled = payload.sound_enabled
+    profile.haptic_enabled = payload.haptic_enabled
     await db.commit()
     return _response(profile)

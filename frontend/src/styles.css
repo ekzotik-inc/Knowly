@@ -80,3 +80,22 @@ h2 { margin: 0 0 4px; font-size: 15px; line-height: 1.2; }
 .review small { color: var(--tg-theme-hint-color, #887a95); line-height: 1.4; }
 .review.correct { background: #eafaf2; color: #15965b; }
 .review.wrong { background: #fff0f2; color: #b8384c; }
+
+.progress-pill { display: inline-flex; margin-top: 15px; padding: 7px 10px; border: 1px solid #ffffff66; border-radius: 999px; background: #ffffff22; color: #fff; font-size: 11px; font-weight: 800; }
+.character { width: 116px; margin: -8px auto 4px; }
+.character svg { display: block; width: 100%; height: auto; overflow: visible; }
+.character-compact { width: 96px; }
+.character-bounce svg { animation: character-bounce .55s ease both; }
+.character-wink svg { animation: character-wink .65s ease both; }
+.character-victory svg { animation: character-victory .7s ease both; }
+.character-cover svg, .character-tilt svg { animation: character-tilt .55s ease both; }
+.character-editor { margin-top: 14px; padding: 16px; border: 1px solid #eadce8; border-radius: 22px; background: var(--tg-theme-secondary-bg-color, #ffffffcc); }
+.editor-heading { display: flex; justify-content: space-between; margin-bottom: 13px; color: var(--tg-theme-text-color, #30243a); font-size: 14px; }
+.editor-heading span { color: #d35495; font-size: 11px; font-weight: 800; text-transform: uppercase; }
+.editor-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; }
+.editor-grid label { display: grid; gap: 5px; color: var(--tg-theme-hint-color, #887a95); font-size: 10px; text-transform: capitalize; }
+.editor-grid select { min-width: 0; border: 1px solid #eadce8; border-radius: 11px; padding: 8px 7px; background: var(--tg-theme-bg-color, #fff7fb); color: var(--tg-theme-text-color, #30243a); font: inherit; font-size: 11px; }
+@keyframes character-bounce { 50% { transform: translateY(-7px) rotate(2deg); } }
+@keyframes character-wink { 50% { transform: rotate(2deg) scale(1.03); } }
+@keyframes character-victory { 50% { transform: translateY(-6px) scale(1.02); } }
+@keyframes character-tilt { 50% { transform: rotate(-4deg); } }

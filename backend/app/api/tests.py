@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 import secrets
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
+from typing import Literal
 import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -21,7 +22,9 @@ from app.db.models import (
     User,
 )
 from app.db.session import get_db
+from app.services.analytics import record_event
 from app.services.payments import user_has_entitlement
+from app.services.progression import award_xp
 
 router = APIRouter(prefix="/api/v1", tags=["tests"])
 
@@ -30,11 +33,18 @@ class QuestionInput(BaseModel):
     text: str = Field(min_length=3, max_length=500)
     options: list[str] = Field(min_length=2, max_length=4)
     correct_option: str = Field(min_length=1, max_length=255)
+    difficulty: Literal["easy", "medium", "hard", "personal"] = "easy"
     category: str | None = Field(default=None, max_length=64)
+    is_secret: bool = False
 
 
 class CreateTestRequest(BaseModel):
     title: str = Field(default="Насколько ты меня знаешь?", min_length=3, max_length=128)
+    privacy_mode: Literal["public", "friends", "private"] = "public"
+    expires_hours: int | None = Field(default=None, ge=1, le=168)
+    max_attempts: int | None = Field(default=None, ge=1, le=1000)
+    secret_message_80: str | None = Field(default=None, max_length=500)
+    secret_message_100: str | None = Field(default=None, max_length=500)
     questions: list[QuestionInput] = Field(min_length=3, max_length=15)
 
 
@@ -122,6 +132,11 @@ async def create_test(
         mode="know_me",
         public_token=_new_public_token(),
         status="published",
+        privacy_mode=request.privacy_mode,
+        expires_at=datetime.now(timezone.utc) + timedelta(hours=request.expires_hours) if request.expires_hours else None,
+        max_attempts=request.max_attempts,
+        secret_message_80=request.secret_message_80,
+        secret_message_100=request.secret_message_100,
     )
     db.add(test)
     await db.flush()
@@ -133,12 +148,16 @@ async def create_test(
             text=item.text,
             options=item.options,
             correct_option=item.correct_option,
+            difficulty=item.difficulty,
             category=item.category,
+            is_secret=item.is_secret,
         )
         db.add(question)
         await db.flush()
         db.add(TestQuestion(test_id=test.id, question_id=question.id, position=position))
 
+    await award_xp(db, user_id=current_user.id, amount=25, created_test=True)
+    await record_event(db, event_name="test_created", actor_user_id=current_user.id, test_id=test.id)
     await db.commit()
     return TestSummary(
         id=test.id,
@@ -171,6 +190,10 @@ async def get_public_test(
     test = await db.scalar(select(Test).where(Test.public_token == public_token, Test.status == "published"))
     if test is None:
         raise HTTPException(status_code=404, detail="Тест не найден")
+    if test.expires_at and test.expires_at <= datetime.now(timezone.utc):
+        raise HTTPException(status_code=410, detail="Срок действия теста истёк")
+    if test.privacy_mode != "public":
+        raise HTTPException(status_code=403, detail="Тест доступен по другой privacy-настройке")
 
     owner = await db.get(User, test.owner_id)
     rows = await db.execute(
@@ -201,6 +224,14 @@ async def start_test_session(
     test = await db.scalar(select(Test).where(Test.public_token == public_token, Test.status == "published"))
     if test is None:
         raise HTTPException(status_code=404, detail="Тест не найден")
+    if test.expires_at and test.expires_at <= datetime.now(timezone.utc):
+        raise HTTPException(status_code=410, detail="Срок действия теста истёк")
+    if test.privacy_mode != "public":
+        raise HTTPException(status_code=403, detail="Тест доступен по другой privacy-настройке")
+    if test.max_attempts is not None:
+        used_attempts = int((await db.execute(select(func.count(TestSession.id)).where(TestSession.test_id == test.id))).scalar_one())
+        if used_attempts >= test.max_attempts:
+            raise HTTPException(status_code=410, detail="Лимит прохождений исчерпан")
     count = len((await db.execute(select(TestQuestion.id).where(TestQuestion.test_id == test.id))).scalars().all())
     if count == 0:
         raise HTTPException(status_code=409, detail="В тесте нет вопросов")
@@ -299,6 +330,8 @@ async def complete_session(
         total_questions=total,
         percentage=percentage,
     )
+    await award_xp(db, user_id=current_user.id, amount=25, completed_test=True)
+    await record_event(db, event_name="test_completed", actor_user_id=current_user.id, test_id=session.test_id, event_metadata={"percentage": percentage})
     db.add(result)
     for link in links:
         question = questions[link.question_id]
