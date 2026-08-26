@@ -35,7 +35,7 @@ def test_result_percentage_selects_emotion_and_pose(percentage, emotion, pose):
     assert state.pose == pose
 
 
-@pytest.mark.parametrize("gender", ["feminine", "masculine", "neutral"])
+@pytest.mark.parametrize("gender", ["feminine", "masculine"])
 def test_character_config_accepts_all_gender_variants(gender):
     from app.services.character import CharacterConfig
 

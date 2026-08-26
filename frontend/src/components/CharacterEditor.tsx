@@ -6,10 +6,10 @@ type ChoiceKey = "personality" | "hair_style" | "hair_color" | "outfit" | "acces
 
 const choices: { key: ChoiceKey; label: string; items: [string, string][] }[] = [
   { key: "personality", label: "Характер", items: [["cute", "Милая"], ["funny", "Смешная"], ["romantic", "Романтичная"], ["confident", "Уверенная"], ["mysterious", "Загадочная"], ["chaotic", "Хаотичная"]] },
-  { key: "hair_style", label: "Причёска", items: [["short", "Короткая"], ["bob", "Каре"], ["long", "Длинная"], ["curly", "Кудри"], ["bun", "Пучок"]] },
+  { key: "hair_style", label: "Причёска", items: [["short", "Короткая"], ["bob", "Каре"], ["long", "Длинная"], ["curly", "Кудри"], ["bun", "Пучок"], ["pixie", "Пикси"], ["space_buns", "Два пучка"], ["side_swept", "На бок"]] },
   { key: "hair_color", label: "Цвет волос", items: [["midnight", "Ночной"], ["chestnut", "Каштан"], ["honey", "Мёд"], ["rose", "Розовый"], ["lavender", "Лаванда"]] },
   { key: "outfit", label: "Наряд", items: [["hoodie", "Худи"], ["sweater", "Свитер"], ["shirt", "Рубашка"], ["dress", "Платье"], ["jacket", "Куртка"]] },
-  { key: "accessory", label: "Аксессуар", items: [["none", "Ничего"], ["heart", "Сердце"], ["star", "Звезда"], ["flower", "Цветок"], ["sparkle", "Искра"]] },
+  { key: "accessory", label: "Аксессуар", items: [["none", "Ничего"], ["heart", "Сердце"], ["star", "Звезда"], ["flower", "Цветок"], ["sparkle", "Искра"], ["headphones", "Наушники"], ["bow", "Бант"], ["crown", "Корона"], ["scarf", "Шарф"], ["earrings", "Серьги"]] },
   { key: "palette", label: "Палитра", items: [["rose", "Розовая"], ["violet", "Фиолетовая"], ["mint", "Мятная"], ["sunset", "Закат"], ["night", "Ночная"]] },
 ];
 

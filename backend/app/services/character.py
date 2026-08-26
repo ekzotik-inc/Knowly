@@ -14,16 +14,16 @@ Emotion = Literal[
 class CharacterConfig(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    gender: Literal["feminine", "masculine", "neutral"] = "feminine"
+    gender: Literal["feminine", "masculine"] = "feminine"
     personality: Personality = "romantic"
     head_shape: Literal["round", "soft", "sharp"] = "soft"
     skin_tone: Literal["porcelain", "peach", "honey", "almond", "cocoa"] = "peach"
-    hair_style: Literal["short", "bob", "long", "curly", "bun"] = "bob"
+    hair_style: Literal["short", "bob", "long", "curly", "bun", "pixie", "space_buns", "side_swept"] = "bob"
     hair_color: Literal["midnight", "chestnut", "honey", "rose", "lavender"] = "chestnut"
     eyes: Literal["round", "soft", "sparkle", "mischief"] = "soft"
     brows: Literal["soft", "arched", "straight", "bold"] = "soft"
     outfit: Literal["hoodie", "sweater", "shirt", "dress", "jacket"] = "sweater"
-    accessory: Literal["none", "heart", "star", "flower", "sparkle"] = "heart"
+    accessory: Literal["none", "heart", "star", "flower", "sparkle", "headphones", "bow", "crown", "scarf", "earrings"] = "heart"
     glasses: Literal["none", "round", "cat_eye"] = "none"
     hat: Literal["none", "beanie", "beret", "halo"] = "none"
     palette: Literal["rose", "violet", "mint", "sunset", "night"] = "rose"

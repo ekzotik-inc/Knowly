@@ -20,6 +20,7 @@ export function Character({ config, emotion = "default", pose = "idle", compact 
   const style = { "--character-primary": primary, "--character-secondary": secondary } as CSSProperties;
   const isHappy = ["happy", "love", "proud", "excited"].includes(emotion);
   const isSad = ["sad", "shy"].includes(emotion);
+  const hairPath = config.hair_style === "pixie" ? "M57 121 Q50 73 83 50 Q120 28 157 50 Q190 73 183 121 Q160 96 145 90 Q120 104 95 90 Q79 96 57 121Z" : config.hair_style === "side_swept" ? "M47 143 Q36 76 79 49 Q127 20 177 57 Q199 83 184 151 Q160 108 128 91 Q91 76 47 143Z" : config.hair_style === "long" || config.hair_style === "bob" ? "M52 138 Q41 80 80 54 Q120 23 160 54 Q199 80 188 138 Q173 110 162 93 Q120 112 78 93 Q67 110 52 138Z" : config.hair_style === "curly" ? "M53 129 Q32 86 69 52 Q120 19 171 52 Q208 86 187 129 Q169 100 156 91 Q120 106 84 91 Q71 100 53 129Z" : "M54 119 Q48 73 82 53 Q120 31 158 53 Q192 73 186 119 Q166 91 153 86 Q120 100 87 86 Q74 91 54 119Z";
 
   return <div className={`character character-${pose} ${compact ? "character-compact" : ""}`} style={style} aria-label={`Персонаж Knowly: ${emotion}`}>
     <svg viewBox="0 0 240 300" role="img" aria-hidden="true">
@@ -39,11 +40,15 @@ export function Character({ config, emotion = "default", pose = "idle", compact 
         <path d={isMasculine ? "M162 225 Q187 231 197 260" : "M162 232 Q182 238 190 263"} fill="none" stroke={skin[config.skin_tone]} strokeWidth={isMasculine ? 18 : 16} strokeLinecap="round" />
         {pose === "victory" && <><path d="M52 255 Q30 236 40 216" fill="none" stroke={skin[config.skin_tone]} strokeWidth="12" strokeLinecap="round" /><path d="M188 255 Q210 236 200 216" fill="none" stroke={skin[config.skin_tone]} strokeWidth="12" strokeLinecap="round" /></>}
         <path d={`M120 ${62 + (config.hair_style === "bun" ? 7 : 0)} C${120 - faceRadius} 78 ${120 - faceRadius - 4} 142 ${120 - faceRadius / 1.1} 184 C${120 - 35} 218 ${120 + 35} 218 ${120 + faceRadius / 1.1} 184 C${120 + faceRadius + 4} 142 ${120 + faceRadius} 78 120 ${62 + (config.hair_style === "bun" ? 7 : 0)}Z`} fill={`url(#characterSkin-${id})`} />
-        <path d={config.hair_style === "long" || config.hair_style === "bob" ? "M52 138 Q41 80 80 54 Q120 23 160 54 Q199 80 188 138 Q173 110 162 93 Q120 112 78 93 Q67 110 52 138Z" : config.hair_style === "curly" ? "M53 129 Q32 86 69 52 Q120 19 171 52 Q208 86 187 129 Q169 100 156 91 Q120 106 84 91 Q71 100 53 129Z" : "M54 119 Q48 73 82 53 Q120 31 158 53 Q192 73 186 119 Q166 91 153 86 Q120 100 87 86 Q74 91 54 119Z"} fill={`url(#characterHair-${id})`} />
+        <path d={hairPath} fill={`url(#characterHair-${id})`} />
         {config.hair_style === "bun" && <circle cx="163" cy="55" r="22" fill={hair[config.hair_color]} />}
+        {config.hair_style === "space_buns" && <><circle cx="65" cy="61" r="24" fill={`url(#characterHair-${id})`} /><circle cx="175" cy="61" r="24" fill={`url(#characterHair-${id})`} /></>}
         {config.hat === "beanie" && <><path d="M64 74 Q65 24 120 22 Q175 24 176 74Z" fill={secondary} /><path d="M65 69H175" stroke="#ffffff66" strokeWidth="8" /></>}
         {config.hat === "beret" && <ellipse cx="128" cy="54" rx="63" ry="25" fill={secondary} transform="rotate(-8 128 54)" />}
         {config.hat === "halo" && <ellipse cx="120" cy="24" rx="48" ry="12" fill="none" stroke="#ffd76d" strokeWidth="7" />}
+        {config.accessory === "headphones" && <><path d="M54 134V116 Q54 51 120 51 Q186 51 186 116V134" fill="none" stroke="#ff79b1" strokeWidth="9" strokeLinecap="round" /><rect x="46" y="120" width="18" height="34" rx="8" fill="#9b87e8" /><rect x="176" y="120" width="18" height="34" rx="8" fill="#9b87e8" /></>}
+        {config.accessory === "crown" && <path d="M82 65L91 36L120 55L149 36L158 65Z" fill="#ffd76d" stroke="#fff2b0" strokeWidth="3" />}
+        {config.accessory === "bow" && <><path d="M177 109 Q204 91 207 114 Q204 137 177 122Z" fill="#ff6d9f" /><path d="M177 109 Q150 91 147 114 Q150 137 177 122Z" fill="#ff94bd" /><circle cx="177" cy="116" r="7" fill="#ffd76d" /></>}
         <path d={config.brows === "arched" ? "M78 133 Q91 122 102 133 M138 133 Q149 122 162 133" : config.brows === "straight" || isMasculine ? "M78 130H102 M138 130H162" : "M78 132 Q90 126 102 132 M138 132 Q150 126 162 132"} fill="none" stroke="#583b48" strokeWidth={config.brows === "bold" || isMasculine ? 6 : 4} strokeLinecap="round" />
         <path d="M76 113 Q111 89 151 104" fill="none" stroke="#ffffff55" strokeWidth="6" strokeLinecap="round" filter={`url(#softGlow-${id})`} />
         <g transform={`translate(0 ${eyeY - 151}) scale(1 ${eyeScale})`}>
@@ -58,6 +63,8 @@ export function Character({ config, emotion = "default", pose = "idle", compact 
         {config.accessory === "star" && <text x="177" y="113" fill="#ffd15c" fontSize="26">✦</text>}
         {config.accessory === "flower" && <text x="176" y="113" fill="#ff96b7" fontSize="23">✿</text>}
         {config.accessory === "sparkle" && <text x="177" y="113" fill="#b69bff" fontSize="25">✧</text>}
+        {config.accessory === "scarf" && <path d="M78 213 Q120 228 162 213L158 235 Q120 248 82 235Z" fill="#ff6d9f" stroke="#ffb1d0" strokeWidth="3" />}
+        {config.accessory === "earrings" && <><circle cx="64" cy="181" r="6" fill="#ffd76d" /><circle cx="176" cy="181" r="6" fill="#ffd76d" /></>}
         {emotion === "excited" && <g fill="#f3a2c4"><circle cx="40" cy="102" r="4" /><circle cx="197" cy="174" r="4" /><circle cx="45" cy="190" r="3" /></g>}
       </g>
     </svg>
