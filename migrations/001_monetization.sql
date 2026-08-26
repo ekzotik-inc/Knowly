@@ -68,9 +68,12 @@ CREATE TABLE IF NOT EXISTS profiles (
     user_id uuid NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE,
     display_name varchar(128) NOT NULL,
     avatar_url varchar(512),
+    character_config jsonb NOT NULL DEFAULT '{}'::jsonb,
     created_at timestamptz NOT NULL DEFAULT now(),
     updated_at timestamptz NOT NULL DEFAULT now()
 );
+
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS character_config jsonb NOT NULL DEFAULT '{}'::jsonb;
 
 CREATE TABLE IF NOT EXISTS tests (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
