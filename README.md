@@ -78,6 +78,13 @@ npm run dev
 | `GET` | `/api/v1/payments/products` | Каталог активных Stars-продуктов |
 | `POST` | `/api/v1/payments/invoice` | Создание pending order и invoice link |
 | `GET` | `/api/v1/payments/entitlements` | Доступные функции текущего пользователя |
+| `POST` | `/api/v1/tests` | Создать и опубликовать тест с вопросами |
+| `GET` | `/api/v1/tests` | Получить свои тесты |
+| `GET` | `/api/v1/public/tests/{public_token}` | Получить публичную версию теста без правильных ответов |
+| `POST` | `/api/v1/public/tests/{public_token}/sessions` | Начать игровую сессию |
+| `POST` | `/api/v1/sessions/{session_id}/answers` | Сохранить выбранный вариант |
+| `POST` | `/api/v1/sessions/{session_id}/complete` | Рассчитать и зафиксировать результат |
+| `GET` | `/api/v1/results/{result_id}` | Просмотреть результат и разбор ответов |
 
 Первичный запрос авторизации передаёт исходную строку Mini App так:
 
@@ -103,4 +110,4 @@ Blueprint содержит отдельные сервисы для API, bot wor
 
 ## Статус
 
-Сейчас реализована платёжная foundation: Telegram auth exchange, каталог продуктов, создание invoice link в XTR, pre-checkout validation, successful payment processing, entitlements и базовый premium UI. Игровые экраны профиля и прохождения теста подключаются поверх этой foundation следующим этапом.
+Сейчас реализованы Telegram auth exchange, каталог продуктов, создание invoice link в XTR, pre-checkout validation, successful payment processing, entitlements и рабочий игровой MVP: создание теста, публикация deep link, прохождение по вопросам, сохранение ответов, серверный подсчёт результата и базовый premium UI.

@@ -61,3 +61,88 @@ ON CONFLICT (code) DO UPDATE SET
     description = EXCLUDED.description,
     stars = EXCLUDED.stars,
     entitlement_key = EXCLUDED.entitlement_key;
+
+
+CREATE TABLE IF NOT EXISTS profiles (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id uuid NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE,
+    display_name varchar(128) NOT NULL,
+    avatar_url varchar(512),
+    created_at timestamptz NOT NULL DEFAULT now(),
+    updated_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS tests (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    owner_id uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    title varchar(128) NOT NULL DEFAULT 'Насколько ты меня знаешь?',
+    mode varchar(64) NOT NULL DEFAULT 'know_me',
+    public_token varchar(32) NOT NULL UNIQUE,
+    status varchar(24) NOT NULL DEFAULT 'draft',
+    created_at timestamptz NOT NULL DEFAULT now(),
+    updated_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS ix_tests_owner_status ON tests(owner_id, status);
+
+CREATE TABLE IF NOT EXISTS questions (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    owner_id uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    text varchar(500) NOT NULL,
+    options jsonb NOT NULL,
+    correct_option varchar(255) NOT NULL,
+    category varchar(64),
+    created_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS test_questions (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    test_id uuid NOT NULL REFERENCES tests(id) ON DELETE CASCADE,
+    question_id uuid NOT NULL REFERENCES questions(id) ON DELETE RESTRICT,
+    position integer NOT NULL,
+    CONSTRAINT uq_test_question UNIQUE (test_id, question_id)
+);
+
+CREATE TABLE IF NOT EXISTS test_sessions (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    test_id uuid NOT NULL REFERENCES tests(id) ON DELETE RESTRICT,
+    participant_user_id uuid NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+    status varchar(24) NOT NULL DEFAULT 'in_progress',
+    current_position integer NOT NULL DEFAULT 0,
+    started_at timestamptz NOT NULL DEFAULT now(),
+    completed_at timestamptz
+);
+
+CREATE INDEX IF NOT EXISTS ix_test_sessions_participant ON test_sessions(participant_user_id, status);
+
+CREATE TABLE IF NOT EXISTS test_results (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    session_id uuid NOT NULL UNIQUE REFERENCES test_sessions(id) ON DELETE RESTRICT,
+    test_id uuid NOT NULL REFERENCES tests(id) ON DELETE RESTRICT,
+    owner_id uuid NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+    participant_user_id uuid NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+    correct_answers integer NOT NULL,
+    total_questions integer NOT NULL,
+    percentage integer NOT NULL CHECK (percentage BETWEEN 0 AND 100),
+    created_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS result_answers (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    result_id uuid NOT NULL REFERENCES test_results(id) ON DELETE CASCADE,
+    question_id uuid NOT NULL REFERENCES questions(id) ON DELETE RESTRICT,
+    selected_option varchar(255) NOT NULL,
+    correct_option varchar(255) NOT NULL,
+    is_correct boolean NOT NULL,
+    CONSTRAINT uq_result_answer UNIQUE (result_id, question_id)
+);
+
+
+CREATE TABLE IF NOT EXISTS session_answers (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    session_id uuid NOT NULL REFERENCES test_sessions(id) ON DELETE CASCADE,
+    question_id uuid NOT NULL REFERENCES questions(id) ON DELETE RESTRICT,
+    selected_option varchar(255) NOT NULL,
+    created_at timestamptz NOT NULL DEFAULT now(),
+    CONSTRAINT uq_session_answer UNIQUE (session_id, question_id)
+);
