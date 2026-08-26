@@ -15,6 +15,7 @@ from app.services.payments import (
     PaymentError,
     find_pending_order,
     mark_successful_payment,
+    validate_pre_checkout,
 )
 
 logging.basicConfig(level=logging.INFO)
@@ -36,14 +37,13 @@ async def start(message: Message) -> None:
 async def pre_checkout(query: PreCheckoutQuery) -> None:
     async with SessionLocal() as db:
         order = await find_pending_order(db, payload=query.invoice_payload)
-        valid = bool(
-            order
-            and order.status == "pending"
-            and order.currency == query.currency == "XTR"
-            and order.stars == query.total_amount
-            and order.user.telegram_id == query.from_user.id
+        decision = validate_pre_checkout(
+            order=order,
+            telegram_user_id=query.from_user.id,
+            currency=query.currency,
+            total_amount=query.total_amount,
         )
-        if valid:
+        if decision.accepted:
             await query.answer(ok=True)
         else:
             await query.answer(
@@ -70,12 +70,11 @@ async def successful_payment(message: Message) -> None:
             order = await mark_successful_payment(
                 db,
                 payload=payment.invoice_payload,
+                telegram_user_id=message.from_user.id,
                 telegram_payment_charge_id=payment.telegram_payment_charge_id,
                 total_amount=payment.total_amount,
                 currency=payment.currency,
             )
-            if order.user_id != user.id:
-                raise PaymentError("payment user mismatch")
             await db.commit()
         except PaymentError:
             await db.rollback()

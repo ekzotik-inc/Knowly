@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import secrets
 import uuid
+from dataclasses import dataclass
 from datetime import datetime, timezone
 
 from aiogram import Bot
@@ -15,6 +16,57 @@ from app.db.models import Entitlement, Order, Product, User
 
 class PaymentError(ValueError):
     pass
+
+
+@dataclass(frozen=True, slots=True)
+class PaymentDecision:
+    accepted: bool
+    reason: str | None = None
+
+
+def validate_pre_checkout(
+    *,
+    order: Order | None,
+    telegram_user_id: int,
+    currency: str,
+    total_amount: int,
+) -> PaymentDecision:
+    if order is None:
+        return PaymentDecision(False, "unknown order")
+    if order.status != "pending":
+        return PaymentDecision(False, "order is not pending")
+    if order.user.telegram_id != telegram_user_id:
+        return PaymentDecision(False, "payment user mismatch")
+    if currency != "XTR" or order.currency != currency:
+        return PaymentDecision(False, "currency mismatch")
+    if total_amount != order.stars:
+        return PaymentDecision(False, "amount mismatch")
+    return PaymentDecision(True)
+
+
+def validate_successful_payment(
+    *,
+    order: Order | None,
+    telegram_user_id: int,
+    telegram_payment_charge_id: str,
+    total_amount: int,
+    currency: str,
+) -> PaymentDecision:
+    if order is None:
+        return PaymentDecision(False, "unknown order")
+    if order.user.telegram_id != telegram_user_id:
+        return PaymentDecision(False, "payment user mismatch")
+    if currency != "XTR" or total_amount != order.stars:
+        return PaymentDecision(False, "payment amount or currency mismatch")
+    if order.status == "paid":
+        if order.telegram_payment_charge_id == telegram_payment_charge_id:
+            return PaymentDecision(True, "already processed")
+        return PaymentDecision(False, "payment charge mismatch")
+    if order.status != "pending":
+        return PaymentDecision(False, "order is not payable")
+    if order.telegram_payment_charge_id not in (None, telegram_payment_charge_id):
+        return PaymentDecision(False, "payment charge mismatch")
+    return PaymentDecision(True)
 
 
 async def get_product(db: AsyncSession, product_code: str) -> Product:
@@ -85,6 +137,7 @@ async def mark_successful_payment(
     db: AsyncSession,
     *,
     payload: str,
+    telegram_user_id: int,
     telegram_payment_charge_id: str,
     total_amount: int,
     currency: str,
@@ -93,16 +146,18 @@ async def mark_successful_payment(
     if order is None:
         raise PaymentError("unknown payment payload")
 
+    decision = validate_successful_payment(
+        order=order,
+        telegram_user_id=telegram_user_id,
+        telegram_payment_charge_id=telegram_payment_charge_id,
+        total_amount=total_amount,
+        currency=currency,
+    )
+    if not decision.accepted:
+        raise PaymentError(decision.reason or "invalid payment")
     if order.status == "paid":
         # Idempotent update delivery: do not issue a second entitlement.
         return order
-
-    if order.status != "pending":
-        raise PaymentError("order is not payable")
-    if currency != "XTR" or total_amount != order.stars:
-        raise PaymentError("payment amount or currency mismatch")
-    if order.telegram_payment_charge_id not in (None, telegram_payment_charge_id):
-        raise PaymentError("payment charge mismatch")
 
     order.status = "paid"
     order.telegram_payment_charge_id = telegram_payment_charge_id
