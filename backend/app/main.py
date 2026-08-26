@@ -10,11 +10,13 @@ from app.api.profile import router as profile_router
 from app.api.progression import router as progression_router
 from app.api.telegram_webhook import router as telegram_webhook_router
 from app.core.config import settings
+from app.db.bootstrap import initialize_database
 from bot.main import bot
 
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
+    await initialize_database()
     if settings.environment == "production" and settings.telegram_webhook_url and settings.webhook_secret:
         await bot.set_webhook(
             url=settings.telegram_webhook_url,
