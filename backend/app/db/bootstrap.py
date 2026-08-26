@@ -47,10 +47,10 @@ async def initialize_database() -> None:
         await connection.execute(text("ALTER TABLE session_answers ADD COLUMN IF NOT EXISTS selected_options JSON NOT NULL DEFAULT '[]'::json"))
         await connection.execute(text("ALTER TABLE result_answers ADD COLUMN IF NOT EXISTS selected_options JSON NOT NULL DEFAULT '[]'::json"))
         await connection.execute(text("ALTER TABLE result_answers ADD COLUMN IF NOT EXISTS correct_options JSON NOT NULL DEFAULT '[]'::json"))
-        await connection.execute(text("UPDATE questions SET correct_options = json_build_array(correct_option) WHERE correct_options = '[]'::json"))
-        await connection.execute(text("UPDATE session_answers SET selected_options = json_build_array(selected_option) WHERE selected_options = '[]'::json"))
-        await connection.execute(text("UPDATE result_answers SET selected_options = json_build_array(selected_option) WHERE selected_options = '[]'::json"))
-        await connection.execute(text("UPDATE result_answers SET correct_options = json_build_array(correct_option) WHERE correct_options = '[]'::json"))
+        await connection.execute(text("UPDATE questions SET correct_options = json_build_array(correct_option) WHERE correct_options::text = '[]'"))
+        await connection.execute(text("UPDATE session_answers SET selected_options = json_build_array(selected_option) WHERE selected_options::text = '[]'"))
+        await connection.execute(text("UPDATE result_answers SET selected_options = json_build_array(selected_option) WHERE selected_options::text = '[]'"))
+        await connection.execute(text("UPDATE result_answers SET correct_options = json_build_array(correct_option) WHERE correct_options::text = '[]'"))
 
     async with SessionLocal() as session:
         for values in PRODUCT_SEEDS:
