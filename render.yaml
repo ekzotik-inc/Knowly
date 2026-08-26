@@ -26,7 +26,7 @@ services:
     runtime: python
     rootDir: .
     buildCommand: pip install -r backend/requirements.txt
-    startCommand: python -m bot.main
+    startCommand: PYTHONPATH=backend python -m bot.main
     envVars:
       - key: TELEGRAM_BOT_TOKEN
         sync: false
