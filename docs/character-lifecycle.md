@@ -31,3 +31,8 @@ The bot exposes `/characters`, which returns a Web App button pointing to `?star
 | Migration | Legacy pair data does not crash or remain as pair storage |
 | Bot | `/characters` opens the personal character editor |
 | Privacy | Character configuration is private profile data, not a public URL payload |
+
+
+## Live verification
+
+After commit `286218e`, Render served the updated Mini App bundle with HTTP 200 and the API health endpoint returned `{"status":"ok"}` with HTTP 200. The production home screen visually shows one personal character card and no pair selector. The profile editor shows one save action, the gender/appearance controls, and the copy that the character belongs to the user.
