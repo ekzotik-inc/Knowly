@@ -1,6 +1,8 @@
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Sora:wght@500;600;700;800&display=swap');
+
 :root {
   color-scheme: dark;
-  font-family: ui-rounded, "Arial Rounded MT Bold", "Nunito", Inter, ui-sans-serif, system-ui, sans-serif;
+  font-family: "Manrope", ui-sans-serif, system-ui, sans-serif;
   color: #f7f4f6;
   background: #15131c;
   font-synthesis: none;
@@ -36,7 +38,7 @@ button, input, select { -webkit-tap-highlight-color: transparent; }
 
 .eyebrow { display: block; margin: 0 0 10px; color: var(--pink-2); font-size: 10px; font-weight: 900; letter-spacing: .17em; }
 h1, h2, p { margin-top: 0; }
-h1, h2, .brand-lockup strong, .primary-button { font-family: ui-rounded, "Arial Rounded MT Bold", "Nunito", Inter, ui-sans-serif, system-ui, sans-serif; }
+h1, h2, .brand-lockup strong, .primary-button { font-family: "Sora", "Manrope", ui-sans-serif, system-ui, sans-serif; }
 h1 { margin-bottom: 0; font-size: clamp(35px, 9vw, 64px); line-height: .97; letter-spacing: -.065em; }
 h1 em { color: var(--pink-2); font-style: normal; }
 h2 { margin-bottom: 0; font-size: 20px; letter-spacing: -.035em; }
@@ -369,3 +371,45 @@ h2 { margin-bottom: 0; font-size: 20px; letter-spacing: -.035em; }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; transition-duration: .01ms !important; } }
 @media (min-width: 680px) { .app-shell { padding-top: 28px; } .home-hero { min-height: 390px; padding: 42px 40px 28px; grid-template-columns: minmax(0, 1fr) 210px; } .hero-character { width: 210px; } .personal-scene .character { width: 220px; } .pair-scene { height: 275px; } .pair-scene .pair-character, .pair-scene .pair-character .character { width: 145px; } .onboarding-hero { min-height: 300px; padding: 36px 40px 18px; grid-template-columns: 1fr 220px; } .onboarding-character .character { width: 220px; } .section-block, .bot-card, .free-mode-note { margin-top: 36px; } .stats-row { margin-bottom: 38px; } }
 @media (max-width: 390px) { .home-hero { grid-template-columns: minmax(0, 1fr) 108px; padding: 28px 17px 20px; } .hero-character { width: 108px; } .hero-character .character { width: 125px; margin-right: -13px; } .pair-scene { height: 215px; margin-right: -7px; } .pair-scene .pair-character, .pair-scene .pair-character .character { width: 109px; } .hero-bubble { right: 4px; } .hero-copy h1 { font-size: 31px; } .stats-row span { font-size: 8px; } .stats-row strong { font-size: 16px; } }
+
+/* The companion owns the atmosphere: feminine stays rosy, masculine becomes indigo/cyan. */
+html[data-character-gender="masculine"] {
+  --pink: #42d6d2;
+  --pink-2: #83f3ed;
+  --violet: #6f8dff;
+  --lime: #b5f27d;
+  --green: #76e6b7;
+  --line: #9eacff22;
+}
+html[data-character-gender="masculine"] body {
+  background: radial-gradient(circle at 12% -8%, #253b7866 0, transparent 36%), radial-gradient(circle at 105% 10%, #165e7155 0, transparent 34%), #111521;
+}
+html[data-character-gender="masculine"] .home-hero,
+html[data-character-gender="masculine"] .quiz-card,
+html[data-character-gender="masculine"] .result-card-new {
+  background: linear-gradient(145deg, #1e2d50 0%, #17223d 54%, #131a2c 100%);
+  border-color: #7e9cff35;
+}
+html[data-character-gender="masculine"] .home-hero::after,
+html[data-character-gender="masculine"] .onboarding-hero::after { background: #42d6d22a; }
+html[data-character-gender="masculine"] .brand-mark,
+html[data-character-gender="masculine"] .primary-button,
+html[data-character-gender="masculine"] .step-chip > span { background: var(--pink); color: #0d2529; box-shadow: 0 12px 28px #42d6d233; }
+html[data-character-gender="masculine"] .text-button,
+html[data-character-gender="masculine"] .eyebrow,
+html[data-character-gender="masculine"] h1 em,
+html[data-character-gender="masculine"] .publication-body > strong,
+html[data-character-gender="masculine"] .score-note strong { color: var(--pink-2); }
+html[data-character-gender="masculine"] .progress-track i { background: linear-gradient(90deg, var(--pink), #b2fff2); }
+html[data-character-gender="masculine"] .publication-cover::before,
+html[data-character-gender="masculine"] .empty-publication-cover { background: radial-gradient(circle at 78% 12%, #74f6ed3d 0 11%, transparent 32%), linear-gradient(135deg, #173d5c, #243271 58%, #14233c); }
+html[data-character-gender="masculine"] .publication-cover::after { background: #42d6d23d; }
+html[data-character-gender="masculine"] .feed-tabs button.active,
+html[data-character-gender="masculine"] .pair-thumb.active { border-color: #42d6d288; background: #42d6d21c; color: var(--pink-2); }
+html[data-character-gender="masculine"] .bot-card { border-color: #6f8dff4b; background: linear-gradient(115deg, #202b51, #18243e); }
+html[data-character-gender="masculine"] .bot-card .eyebrow { color: #aebdff; }
+html[data-character-gender="masculine"] .bot-card-symbol { background: #6f8dff2b; color: #b9c6ff; }
+html[data-character-gender="masculine"] .free-mode-note { border-color: #b5f27d22; background: #b5f27d0b; }
+html[data-character-gender="masculine"] .free-mode-note strong { color: var(--lime); }
+html[data-character-gender="masculine"] .result-card-new::before { background: radial-gradient(circle, #42d6d226, transparent 68%); }
+html[data-character-gender="masculine"] .score-ring-new { filter: drop-shadow(0 0 14px #42d6d238); }

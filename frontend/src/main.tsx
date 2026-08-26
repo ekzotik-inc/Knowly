@@ -25,6 +25,8 @@ type TelegramWebApp = {
   openInvoice?: (url: string, callback?: (status: string) => void) => void;
   openTelegramLink?: (url: string) => void;
   HapticFeedback?: { impactOccurred?: (style: "light" | "medium" | "heavy") => void; notificationOccurred?: (type: "error" | "success" | "warning") => void };
+  setHeaderColor?: (color: string) => void;
+  setBackgroundColor?: (color: string) => void;
   showPopup?: (params: { title?: string; message: string; buttons?: { type: "ok"; text?: string }[] }, callback?: () => void) => void;
 };
 
@@ -125,6 +127,13 @@ function App() {
   }
 
   useEffect(() => { telegram()?.ready(); telegram()?.expand(); void loadHome(); }, []);
+
+  useEffect(() => {
+    const masculine = character.gender === "masculine";
+    document.documentElement.dataset.characterGender = character.gender;
+    telegram()?.setHeaderColor?.(masculine ? "#14233c" : "#241526");
+    telegram()?.setBackgroundColor?.(masculine ? "#111521" : "#15131c");
+  }, [character.gender]);
 
   useEffect(() => {
     if (screen !== "result" || !result) return;
