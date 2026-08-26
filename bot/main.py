@@ -40,7 +40,7 @@ def start_app_url(message: Message) -> str:
 async def start(message: Message) -> None:
     await message.answer(
         "Привет! Я Knowly — маленькая игра, которая показывает, кто действительно тебя знает.\n\n"
-        "Создай свой тест или открой игру друга. Ответы сохранятся, а результат можно сразу отправить в чат.",
+        "Создай свой тест, настрой двух Knowly companion или открой игру друга. Ответы сохранятся, а результат можно сразу отправить в чат.",
         reply_markup=app_keyboard(start_app_url(message)),
     )
 
@@ -51,6 +51,14 @@ async def help_command(message: Message) -> None:
         "В Knowly можно создать тест о себе, поделиться им с друзьями и пройти чужую игру.\n\n"
         "Нажми кнопку ниже, чтобы открыть Mini App.",
         reply_markup=app_keyboard(settings.webapp_url.rstrip("/")),
+    )
+
+
+@dp.message(Command("characters"))
+async def characters_command(message: Message) -> None:
+    await message.answer(
+        "Выбери её или его, настрой волосы, одежду и аксессуары — оба companion будут жить в одном стиле Knowly.",
+        reply_markup=app_keyboard(f"{settings.webapp_url.rstrip('/')}/?startapp=characters"),
     )
 
 

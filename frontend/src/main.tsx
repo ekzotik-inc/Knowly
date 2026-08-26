@@ -120,7 +120,8 @@ function App() {
         api<TestSummary[]>("/api/v1/tests"), api<Product[]>("/api/v1/payments/products"), api<Entitlement[]>("/api/v1/payments/entitlements"), api<Profile>("/api/v1/profile"), api<Progress>("/api/v1/progression"),
       ]);
       setTests(myTests); setProducts(catalog); setEntitlements(owned); setCharacters(profile.characters ?? { feminine: profile.character, masculine: masculineCharacter }); setProgress(profileProgress);
-      if (startParam) await openTest(startParam);
+      if (startParam === "characters") setCharacterOpen(true);
+      else if (startParam) await openTest(startParam);
     } catch (reason) { setError(reason instanceof Error ? reason.message : "Неизвестная ошибка"); }
     finally { setBusy(false); }
   }

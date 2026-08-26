@@ -22,6 +22,7 @@ async def lifespan(_: FastAPI):
         await bot.set_my_commands([
             BotCommand(command="start", description="Открыть Knowly"),
             BotCommand(command="help", description="Как играть"),
+            BotCommand(command="characters", description="Настроить персонажей"),
             BotCommand(command="terms", description="Конфиденциальность"),
             BotCommand(command="paysupport", description="Поддержка оплаты"),
         ])
