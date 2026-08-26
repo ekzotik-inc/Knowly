@@ -333,6 +333,8 @@ async def complete_session(
     await award_xp(db, user_id=current_user.id, amount=25, completed_test=True)
     await record_event(db, event_name="test_completed", actor_user_id=current_user.id, test_id=session.test_id, event_metadata={"percentage": percentage})
     db.add(result)
+    # ResultAnswer references test_results.result_id; flush the parent row before bulk child inserts.
+    await db.flush()
     for link in links:
         question = questions[link.question_id]
         answer = answer_by_question[link.question_id]
