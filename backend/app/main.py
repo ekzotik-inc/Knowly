@@ -1,6 +1,6 @@
 from contextlib import asynccontextmanager
 
-from aiogram.types import BotCommand
+from aiogram.types import BotCommand, MenuButtonWebApp, WebAppInfo
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -25,6 +25,7 @@ async def lifespan(_: FastAPI):
             BotCommand(command="terms", description="Конфиденциальность"),
             BotCommand(command="paysupport", description="Поддержка оплаты"),
         ])
+        await bot.set_chat_menu_button(menu_button=MenuButtonWebApp(text="Открыть Knowly", web_app=WebAppInfo(url=settings.webapp_url.rstrip("/"))))
         await bot.set_webhook(
             url=settings.telegram_webhook_url,
             secret_token=settings.webhook_secret,
