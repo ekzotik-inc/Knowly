@@ -162,6 +162,15 @@ ALTER TABLE tests ADD COLUMN IF NOT EXISTS secret_message_80 varchar(500);
 ALTER TABLE tests ADD COLUMN IF NOT EXISTS secret_message_100 varchar(500);
 ALTER TABLE questions ADD COLUMN IF NOT EXISTS difficulty varchar(24) NOT NULL DEFAULT 'easy';
 ALTER TABLE questions ADD COLUMN IF NOT EXISTS is_secret boolean NOT NULL DEFAULT false;
+ALTER TABLE questions ADD COLUMN IF NOT EXISTS correct_options jsonb NOT NULL DEFAULT '[]'::jsonb;
+ALTER TABLE questions ADD COLUMN IF NOT EXISTS multiple_answers boolean NOT NULL DEFAULT false;
+UPDATE questions SET correct_options = jsonb_build_array(correct_option) WHERE correct_options = '[]'::jsonb;
+ALTER TABLE result_answers ADD COLUMN IF NOT EXISTS selected_options jsonb NOT NULL DEFAULT '[]'::jsonb;
+ALTER TABLE result_answers ADD COLUMN IF NOT EXISTS correct_options jsonb NOT NULL DEFAULT '[]'::jsonb;
+ALTER TABLE session_answers ADD COLUMN IF NOT EXISTS selected_options jsonb NOT NULL DEFAULT '[]'::jsonb;
+UPDATE result_answers SET selected_options = jsonb_build_array(selected_option) WHERE selected_options = '[]'::jsonb;
+UPDATE result_answers SET correct_options = jsonb_build_array(correct_option) WHERE correct_options = '[]'::jsonb;
+UPDATE session_answers SET selected_options = jsonb_build_array(selected_option) WHERE selected_options = '[]'::jsonb;
 
 CREATE TABLE IF NOT EXISTS user_progress (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),

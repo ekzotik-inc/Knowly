@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from sqlalchemy import select
+from sqlalchemy import select, text
 
 from app.db.models import Achievement, Base, Product
 from app.db.session import SessionLocal, engine
@@ -42,6 +42,15 @@ ACHIEVEMENT_SEEDS = (
 async def initialize_database() -> None:
     async with engine.begin() as connection:
         await connection.run_sync(Base.metadata.create_all)
+        await connection.execute(text("ALTER TABLE questions ADD COLUMN IF NOT EXISTS correct_options JSON NOT NULL DEFAULT '[]'::json"))
+        await connection.execute(text("ALTER TABLE questions ADD COLUMN IF NOT EXISTS multiple_answers BOOLEAN NOT NULL DEFAULT FALSE"))
+        await connection.execute(text("ALTER TABLE session_answers ADD COLUMN IF NOT EXISTS selected_options JSON NOT NULL DEFAULT '[]'::json"))
+        await connection.execute(text("ALTER TABLE result_answers ADD COLUMN IF NOT EXISTS selected_options JSON NOT NULL DEFAULT '[]'::json"))
+        await connection.execute(text("ALTER TABLE result_answers ADD COLUMN IF NOT EXISTS correct_options JSON NOT NULL DEFAULT '[]'::json"))
+        await connection.execute(text("UPDATE questions SET correct_options = json_build_array(correct_option) WHERE correct_options = '[]'::json"))
+        await connection.execute(text("UPDATE session_answers SET selected_options = json_build_array(selected_option) WHERE selected_options = '[]'::json"))
+        await connection.execute(text("UPDATE result_answers SET selected_options = json_build_array(selected_option) WHERE selected_options = '[]'::json"))
+        await connection.execute(text("UPDATE result_answers SET correct_options = json_build_array(correct_option) WHERE correct_options = '[]'::json"))
 
     async with SessionLocal() as session:
         for values in PRODUCT_SEEDS:

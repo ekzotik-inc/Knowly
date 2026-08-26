@@ -38,17 +38,22 @@ def start_app_url(message: Message) -> str:
 
 @dp.message(CommandStart())
 async def start(message: Message) -> None:
-    await message.answer(
-        "Привет! Я Knowly — маленькая игра, которая показывает, кто действительно тебя знает.\n\n"
-        "Создай свой тест, настрой двух Knowly companion или открой игру друга. Ответы сохранятся, а результат можно сразу отправить в чат.",
-        reply_markup=app_keyboard(start_app_url(message)),
+    has_invite = len((message.text or "").split(maxsplit=1)) == 2
+    text = (
+        "Тебя пригласили в Knowly. Нажми кнопку ниже, чтобы открыть приглашение, выбрать своё имя и личного персонажа, а затем пройти тест."
+        if has_invite
+        else
+        "Привет! Я Knowly — уютная игра, которая показывает, кто действительно тебя знает.\n\n"
+        "Создай свой тест, настрой одного личного Knowly companion или открой игру друга. Ответ можно отправить прямо в чат."
     )
+    await message.answer(text, reply_markup=app_keyboard(start_app_url(message)))
 
 
 @dp.message(Command("help"))
 async def help_command(message: Message) -> None:
     await message.answer(
-        "В Knowly можно создать тест о себе, поделиться им с друзьями и пройти чужую игру.\n\n"
+        "В Knowly можно создать тест о себе, поделиться им с друзьями и пройти чужую игру.\n"
+        "При первом запуске выбери имя и пол — личный персонаж и цвет интерфейса подстроятся автоматически.\n\n"
         "Нажми кнопку ниже, чтобы открыть Mini App.",
         reply_markup=app_keyboard(settings.webapp_url.rstrip("/")),
     )
@@ -57,7 +62,7 @@ async def help_command(message: Message) -> None:
 @dp.message(Command("characters"))
 async def characters_command(message: Message) -> None:
     await message.answer(
-        "Создай своего личного Knowly companion: выбери образ, настрой волосы, одежду и аксессуары. Изменить персонажа можно в любой момент.",
+        "Настрой своего личного Knowly companion: выбери образ, волосы, одежду и аксессуары. Изменить персонажа можно в любой момент.",
         reply_markup=app_keyboard(f"{settings.webapp_url.rstrip('/')}/?startapp=characters"),
     )
 

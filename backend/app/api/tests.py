@@ -6,7 +6,7 @@ from typing import Literal
 import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -20,6 +20,7 @@ from app.db.models import (
     TestResult,
     TestSession,
     User,
+    Profile,
 )
 from app.db.session import get_db
 from app.services.analytics import record_event
@@ -31,11 +32,29 @@ router = APIRouter(prefix="/api/v1", tags=["tests"])
 
 class QuestionInput(BaseModel):
     text: str = Field(min_length=3, max_length=500)
-    options: list[str] = Field(min_length=2, max_length=4)
-    correct_option: str = Field(min_length=1, max_length=255)
+    options: list[str] = Field(min_length=2, max_length=8)
+    correct_option: str | None = Field(default=None, min_length=1, max_length=255)
+    correct_options: list[str] = Field(default_factory=list, max_length=8)
+    multiple: bool = False
     difficulty: Literal["easy", "medium", "hard", "personal"] = "easy"
     category: str | None = Field(default=None, max_length=64)
     is_secret: bool = False
+
+    @model_validator(mode="after")
+    def normalize_correct_options(self) -> "QuestionInput":
+        self.options = [item.strip() for item in self.options if item.strip()]
+        if len(set(self.options)) != len(self.options):
+            raise ValueError("Варианты ответа не должны повторяться")
+        selected = list(dict.fromkeys([item.strip() for item in self.correct_options if item.strip()]))
+        if not selected and self.correct_option:
+            selected = [self.correct_option.strip()]
+        if self.multiple and len(selected) < 2:
+            raise ValueError("Для мультивыбора отметьте минимум два правильных варианта")
+        if not self.multiple and len(selected) != 1:
+            raise ValueError("Отметьте ровно один правильный вариант")
+        self.correct_options = selected
+        self.correct_option = selected[0]
+        return self
 
 
 class CreateTestRequest(BaseModel):
@@ -54,6 +73,9 @@ class TestSummary(BaseModel):
     public_token: str
     status: str
     question_count: int
+    attempt_count: int = 0
+    average_percentage: int = 0
+    best_percentage: int = 0
 
 
 class PublicQuestion(BaseModel):
@@ -61,6 +83,7 @@ class PublicQuestion(BaseModel):
     text: str
     options: list[str]
     position: int
+    multiple: bool = False
 
 
 class PublicTest(BaseModel):
@@ -79,7 +102,19 @@ class StartSessionResponse(BaseModel):
 
 class AnswerRequest(BaseModel):
     question_id: uuid.UUID
-    selected_option: str = Field(min_length=1, max_length=255)
+    selected_option: str | None = Field(default=None, min_length=1, max_length=255)
+    selected_options: list[str] = Field(default_factory=list, max_length=8)
+
+    @model_validator(mode="after")
+    def normalize_selected_options(self) -> "AnswerRequest":
+        selected = list(dict.fromkeys([item.strip() for item in self.selected_options if item.strip()]))
+        if not selected and self.selected_option:
+            selected = [self.selected_option.strip()]
+        if not selected:
+            raise ValueError("Выберите хотя бы один вариант")
+        self.selected_options = selected
+        self.selected_option = selected[0]
+        return self
 
 
 class ResultResponse(BaseModel):
@@ -94,6 +129,8 @@ class ReviewItem(BaseModel):
     question_id: uuid.UUID
     selected_option: str
     correct_option: str
+    selected_options: list[str] = Field(default_factory=list)
+    correct_options: list[str] = Field(default_factory=list)
     is_correct: bool
 
 
@@ -109,6 +146,34 @@ class StatisticsResponse(BaseModel):
     best_percentage: int | None
 
 
+class AttemptResponse(BaseModel):
+    result_id: uuid.UUID
+    participant_name: str
+    percentage: int
+    correct_answers: int
+    total_questions: int
+    completed_at: datetime | None
+    attempt_number: int
+
+
+class LeaderboardEntry(BaseModel):
+    participant_name: str
+    best_percentage: int
+    attempts_count: int
+    latest_percentage: int
+
+
+class TestAnalyticsResponse(BaseModel):
+    test_id: uuid.UUID
+    title: str
+    total_attempts: int
+    unique_participants: int
+    average_percentage: int
+    best_percentage: int
+    attempts: list[AttemptResponse]
+    leaderboard: list[LeaderboardEntry]
+
+
 def _new_public_token() -> str:
     return secrets.token_urlsafe(12).replace("-", "_").replace(".", "_")[:24]
 
@@ -120,10 +185,13 @@ async def create_test(
     db: AsyncSession = Depends(get_db),
 ) -> TestSummary:
     for item in request.questions:
-        if len(set(item.options)) != len(item.options):
+        options = [option.strip() for option in item.options if option.strip()]
+        if len(options) < 2 or len(options) > 8:
+            raise HTTPException(status_code=422, detail="У вопроса должно быть от 2 до 8 вариантов")
+        if len(set(options)) != len(options):
             raise HTTPException(status_code=422, detail="Варианты ответа не должны повторяться")
-        if item.correct_option not in item.options:
-            raise HTTPException(status_code=422, detail="Правильный ответ должен быть одним из вариантов")
+        if any(option not in options for option in item.correct_options):
+            raise HTTPException(status_code=422, detail="Правильные ответы должны быть вариантами вопроса")
 
     test = Test(
         id=uuid.uuid4(),
@@ -142,12 +210,15 @@ async def create_test(
     await db.flush()
 
     for position, item in enumerate(request.questions):
+        options = [option.strip() for option in item.options if option.strip()]
         question = Question(
             id=uuid.uuid4(),
             owner_id=current_user.id,
             text=item.text,
-            options=item.options,
-            correct_option=item.correct_option,
+            options=options,
+            correct_option=item.correct_options[0],
+            correct_options=item.correct_options,
+            multiple_answers=item.multiple,
             difficulty=item.difficulty,
             category=item.category,
             is_secret=item.is_secret,
@@ -178,8 +249,67 @@ async def list_my_tests(
     response: list[TestSummary] = []
     for test in tests:
         count = len((await db.execute(select(TestQuestion.id).where(TestQuestion.test_id == test.id))).scalars().all())
-        response.append(TestSummary(id=test.id, title=test.title, public_token=test.public_token, status=test.status, question_count=count))
+        attempts = list((await db.execute(select(TestResult).where(TestResult.test_id == test.id))).scalars())
+        response.append(TestSummary(
+            id=test.id, title=test.title, public_token=test.public_token, status=test.status,
+            question_count=count, attempt_count=len(attempts),
+            average_percentage=round(sum(item.percentage for item in attempts) / len(attempts)) if attempts else 0,
+            best_percentage=max((item.percentage for item in attempts), default=0),
+        ))
     return response
+
+
+@router.get("/tests/{test_id}/analytics", response_model=TestAnalyticsResponse)
+async def get_test_analytics(
+    test_id: uuid.UUID,
+    current_user: CurrentUser,
+    db: AsyncSession = Depends(get_db),
+) -> TestAnalyticsResponse:
+    test = await db.scalar(select(Test).where(Test.id == test_id, Test.owner_id == current_user.id))
+    if test is None:
+        raise HTTPException(status_code=404, detail="Тест не найден")
+    rows = await db.execute(
+        select(TestResult, User, Profile)
+        .join(User, User.id == TestResult.participant_user_id)
+        .outerjoin(Profile, Profile.user_id == User.id)
+        .where(TestResult.test_id == test.id)
+        .order_by(TestResult.created_at.desc())
+    )
+    attempts: list[AttemptResponse] = []
+    participant_attempts: dict[str, list[TestResult]] = {}
+    participant_names: dict[str, str] = {}
+    for result, participant, profile in rows.all():
+        participant_id = str(participant.id)
+        history = participant_attempts.setdefault(participant_id, [])
+        participant_names[participant_id] = (profile.display_name if profile else None) or participant.first_name or "Участник"
+        history.append(result)
+        attempts.append(AttemptResponse(
+            result_id=result.id,
+            participant_name=participant_names[participant_id],
+            percentage=result.percentage,
+            correct_answers=result.correct_answers,
+            total_questions=result.total_questions,
+            completed_at=result.created_at,
+            attempt_number=len(history),
+        ))
+    leaderboard = [LeaderboardEntry(
+        participant_name=participant_names[participant_id],
+        best_percentage=max(result.percentage for result in history),
+        attempts_count=len(history),
+        latest_percentage=history[0].percentage,
+    ) for participant_id, history in participant_attempts.items()]
+    leaderboard.sort(key=lambda item: (-item.best_percentage, -item.latest_percentage, item.participant_name.lower()))
+    percentages = [item.percentage for item in attempts]
+    return TestAnalyticsResponse(
+        test_id=test.id,
+        title=test.title,
+        total_attempts=len(attempts),
+        unique_participants=len(participant_attempts),
+        average_percentage=round(sum(percentages) / len(percentages)) if percentages else 0,
+        best_percentage=max(percentages, default=0),
+        attempts=attempts,
+        leaderboard=leaderboard,
+    )
 
 
 @router.get("/public/tests/{public_token}", response_model=PublicTest)
@@ -196,6 +326,7 @@ async def get_public_test(
         raise HTTPException(status_code=403, detail="Тест доступен по другой privacy-настройке")
 
     owner = await db.get(User, test.owner_id)
+    owner_profile = await db.scalar(select(Profile).where(Profile.user_id == test.owner_id))
     rows = await db.execute(
         select(TestQuestion, Question)
         .join(Question, Question.id == TestQuestion.question_id)
@@ -203,13 +334,13 @@ async def get_public_test(
         .order_by(TestQuestion.position)
     )
     questions = [
-        PublicQuestion(id=question.id, text=question.text, options=question.options, position=link.position)
+        PublicQuestion(id=question.id, text=question.text, options=question.options, position=link.position, multiple=question.multiple_answers)
         for link, question in rows.all()
     ]
     return PublicTest(
         id=test.id,
         title=test.title,
-        owner_name=owner.first_name if owner else "Друг",
+        owner_name=(owner_profile.display_name if owner_profile else None) or (owner.first_name if owner else None) or "Друг",
         public_token=test.public_token,
         questions=questions,
     )
@@ -270,8 +401,11 @@ async def save_answer(
     )
     if question is None or link is None:
         raise HTTPException(status_code=404, detail="Вопрос не найден")
-    if request.selected_option not in question.options:
+    selected_options = request.selected_options
+    if any(option not in question.options for option in selected_options):
         raise HTTPException(status_code=422, detail="Недопустимый вариант ответа")
+    if not question.multiple_answers and len(selected_options) != 1:
+        raise HTTPException(status_code=422, detail="Для этого вопроса выберите один вариант")
 
     answer = await db.scalar(
         select(SessionAnswer).where(
@@ -280,9 +414,10 @@ async def save_answer(
         )
     )
     if answer is None:
-        db.add(SessionAnswer(session_id=session.id, question_id=question.id, selected_option=request.selected_option))
+        db.add(SessionAnswer(session_id=session.id, question_id=question.id, selected_option=selected_options[0], selected_options=selected_options))
     else:
-        answer.selected_option = request.selected_option
+        answer.selected_option = selected_options[0]
+        answer.selected_options = selected_options
     session.current_position = max(session.current_position, link.position + 1)
     await db.commit()
     return {"status": "saved"}
@@ -317,7 +452,13 @@ async def complete_session(
         raise HTTPException(status_code=409, detail="Ответьте на все вопросы перед завершением")
 
     questions = {question.id: question for question in (await db.execute(select(Question).where(Question.id.in_(list(answer_by_question))))).scalars()}
-    correct = sum(questions[link.question_id].correct_option == answer_by_question[link.question_id].selected_option for link in links)
+    def stored_options(answer: SessionAnswer) -> list[str]:
+        return list(answer.selected_options or [answer.selected_option])
+
+    def correct_options(question: Question) -> list[str]:
+        return list(question.correct_options or [question.correct_option])
+
+    correct = sum(set(stored_options(answer_by_question[link.question_id])) == set(correct_options(questions[link.question_id])) for link in links)
     total = len(links)
     percentage = round(correct * 100 / total)
     result = TestResult(
@@ -343,7 +484,9 @@ async def complete_session(
             question_id=question.id,
             selected_option=answer.selected_option,
             correct_option=question.correct_option,
-            is_correct=answer.selected_option == question.correct_option,
+            selected_options=stored_options(answer),
+            correct_options=correct_options(question),
+            is_correct=set(stored_options(answer)) == set(correct_options(question)),
         ))
     session.status = "completed"
     session.completed_at = datetime.now(timezone.utc)
@@ -383,6 +526,8 @@ async def get_result(
             question_id=item.question_id,
             selected_option=item.selected_option,
             correct_option=item.correct_option,
+            selected_options=list(item.selected_options or [item.selected_option]),
+            correct_options=list(item.correct_options or [item.correct_option]),
             is_correct=item.is_correct,
         ) for item in rows.scalars()],
     )

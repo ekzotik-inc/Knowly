@@ -130,6 +130,8 @@ class Question(Base):
     text: Mapped[str] = mapped_column(String(500))
     options: Mapped[list] = mapped_column(JSON)
     correct_option: Mapped[str] = mapped_column(String(255))
+    correct_options: Mapped[list] = mapped_column(JSON, default=list, nullable=False)
+    multiple_answers: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     difficulty: Mapped[str] = mapped_column(String(24), default="easy", nullable=False)
     category: Mapped[str | None] = mapped_column(String(64))
     is_secret: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
@@ -181,6 +183,8 @@ class ResultAnswer(Base):
     question_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("questions.id", ondelete="RESTRICT"))
     selected_option: Mapped[str] = mapped_column(String(255))
     correct_option: Mapped[str] = mapped_column(String(255))
+    selected_options: Mapped[list] = mapped_column(JSON, default=list, nullable=False)
+    correct_options: Mapped[list] = mapped_column(JSON, default=list, nullable=False)
     is_correct: Mapped[bool] = mapped_column(Boolean)
 
 
@@ -192,6 +196,7 @@ class SessionAnswer(Base):
     session_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("test_sessions.id", ondelete="CASCADE"), index=True)
     question_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("questions.id", ondelete="RESTRICT"))
     selected_option: Mapped[str] = mapped_column(String(255))
+    selected_options: Mapped[list] = mapped_column(JSON, default=list, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
