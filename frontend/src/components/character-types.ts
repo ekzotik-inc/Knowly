@@ -1,5 +1,5 @@
 export type CharacterConfig = {
-  gender: "feminine" | "masculine" | "neutral";
+  gender: "feminine" | "masculine";
   personality: "cute" | "funny" | "romantic" | "confident" | "mysterious" | "chaotic";
   head_shape: "round" | "soft" | "sharp";
   skin_tone: "porcelain" | "peach" | "honey" | "almond" | "cocoa";
@@ -12,4 +12,9 @@ export type CharacterConfig = {
   glasses: "none" | "round" | "cat_eye";
   hat: "none" | "beanie" | "beret" | "halo";
   palette: "rose" | "violet" | "mint" | "sunset" | "night";
+};
+
+export type CharacterPair = {
+  feminine: CharacterConfig;
+  masculine: CharacterConfig;
 };

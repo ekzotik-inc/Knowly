@@ -30,6 +30,19 @@ class CharacterConfig(BaseModel):
 
 
 DEFAULT_CHARACTER = CharacterConfig()
+MASCULINE_CHARACTER = CharacterConfig(
+    gender="masculine",
+    personality="confident",
+    head_shape="sharp",
+    skin_tone="honey",
+    hair_style="short",
+    hair_color="midnight",
+    eyes="mischief",
+    brows="bold",
+    outfit="jacket",
+    accessory="star",
+    palette="night",
+)
 
 
 class CharacterState(BaseModel):
