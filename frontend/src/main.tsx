@@ -41,9 +41,11 @@ async function api<T>(path: string, options: RequestInit = {}): Promise<T> {
 
 async function authenticate() {
   const initData = window.Telegram?.WebApp?.initData;
-  if (!initData) throw new Error("Откройте приложение внутри Telegram");
-  const response = await fetch(`${API_URL}/api/v1/auth/telegram`, { method: "POST", headers: { Authorization: `TWA ${initData}` } });
-  if (!response.ok) throw new Error("Не удалось подтвердить Telegram-пользователя");
+  if (!initData && import.meta.env.VITE_LOCAL_DEMO_AUTH !== "true") throw new Error("Откройте приложение внутри Telegram");
+  const response = initData
+    ? await fetch(`${API_URL}/api/v1/auth/telegram`, { method: "POST", headers: { Authorization: `TWA ${initData}` } })
+    : await fetch(`${API_URL}/api/v1/auth/local`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ display_name: "Local Tester" }) });
+  if (!response.ok) throw new Error("Не удалось подтвердить пользователя");
   accessToken = (await response.json() as { access_token: string }).access_token;
 }
 

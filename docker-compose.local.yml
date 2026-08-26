@@ -1,0 +1,55 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: knowly-db-local
+    environment:
+      POSTGRES_DB: knowly
+      POSTGRES_USER: knowly
+      POSTGRES_PASSWORD: knowly
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - knowly_pgdata:/var/lib/postgresql/data
+      - ./migrations/001_monetization.sql:/docker-entrypoint-initdb.d/001_monetization.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U knowly -d knowly"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  api:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: knowly-api-local
+    environment:
+      TELEGRAM_BOT_TOKEN: local-development-token
+      SESSION_SECRET: local-development-session-secret-change-me-0123456789
+      DATABASE_URL: postgresql+asyncpg://knowly:knowly@db:5432/knowly
+      WEBAPP_URL: http://localhost:5173
+      ALLOWED_ORIGINS: http://localhost:5173
+      ENVIRONMENT: development
+      PAYMENTS_ENABLED: "false"
+      LOCAL_DEMO_AUTH: "true"
+      TELEGRAM_WEBHOOK_URL:
+      WEBHOOK_SECRET:
+    ports:
+      - "127.0.0.1:8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: frontend
+      args:
+        VITE_API_URL: http://localhost:8000
+        VITE_LOCAL_DEMO_AUTH: "true"
+    container_name: knowly-mini-app-local
+    ports:
+      - "127.0.0.1:5173:80"
+    depends_on:
+      - api
+
+volumes:
+  knowly_pgdata:

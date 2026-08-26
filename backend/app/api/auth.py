@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.dependencies import get_twa_init_data
@@ -13,11 +13,36 @@ from app.repositories.users import UserRepository
 router = APIRouter(prefix="/api/v1/auth", tags=["auth"])
 
 
+class LocalAuthRequest(BaseModel):
+    display_name: str = Field(default="Local Tester", min_length=1, max_length=128)
+
+
 class AuthResponse(BaseModel):
     access_token: str
     token_type: str = "Bearer"
     expires_in: int
     user_id: str
+
+
+@router.post("/local", response_model=AuthResponse)
+async def authenticate_local(
+    payload: LocalAuthRequest,
+    db: AsyncSession = Depends(get_db),
+) -> AuthResponse:
+    if settings.environment != "development" or not settings.local_demo_auth:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Local auth is disabled")
+
+    user = await UserRepository(db).get_or_create_from_telegram(
+        telegram_id=-1000000001,
+        first_name=payload.display_name.strip(),
+    )
+    await db.commit()
+    ttl_seconds = settings.session_ttl_days * 24 * 60 * 60
+    return AuthResponse(
+        access_token=create_access_token(user.id, settings.session_secret, ttl_seconds),
+        expires_in=ttl_seconds,
+        user_id=str(user.id),
+    )
 
 
 @router.post("/telegram", response_model=AuthResponse)

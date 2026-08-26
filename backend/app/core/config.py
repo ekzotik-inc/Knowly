@@ -20,6 +20,7 @@ class Settings(BaseSettings):
     allowed_origins: str = "http://localhost:5173"
     environment: str = "development"
     payments_enabled: bool = False
+    local_demo_auth: bool = False
     auth_data_max_age_seconds: int = 300
     session_ttl_days: int = 30
 
