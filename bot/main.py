@@ -57,7 +57,7 @@ async def help_command(message: Message) -> None:
 @dp.message(Command("characters"))
 async def characters_command(message: Message) -> None:
     await message.answer(
-        "Выбери её или его, настрой волосы, одежду и аксессуары — оба companion будут жить в одном стиле Knowly.",
+        "Создай своего личного Knowly companion: выбери образ, настрой волосы, одежду и аксессуары. Изменить персонажа можно в любой момент.",
         reply_markup=app_keyboard(f"{settings.webapp_url.rstrip('/')}/?startapp=characters"),
     )
 

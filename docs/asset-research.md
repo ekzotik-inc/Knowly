@@ -49,3 +49,10 @@ DiceBear/Avataaars provides the strongest ready-made customization breadth (hair
 ## Decision
 
 For the first production integration, retain local Knowly mascot identity and use the open-source findings to expand its component vocabulary. Do not hotlink third-party APIs in the production game flow. Keep source URLs and license notes in this document; if external SVG/3D files are vendored later, copy their exact license/attribution alongside the assets.
+
+
+## Personal character lifecycle requirement
+
+The product model is now one user → one personal Knowly character. A new profile starts with an onboarding-required sentinel in the existing JSON column. The Mini App must open the character creator before the home/game experience, and the creator must save a single `character` payload. Existing pair JSON is migrated to one character on read/write for backward compatibility; the legacy feminine side is used as the safe default when no explicit personal choice can be inferred.
+
+The profile editor is available after onboarding and exposes the same full customization set: image/appearance, skin tone, hair, hair color, eyes, brows, clothing, accessory, glasses, headwear and palette. The bot command `/characters` opens the same editor route through `startapp=characters`.

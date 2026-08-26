@@ -60,6 +60,24 @@ h2 { margin-bottom: 0; font-size: 20px; letter-spacing: -.035em; }
 .hero-character .character { width: 153px; margin: 0 -8px -22px 0; }
 .pair-scene { height: 248px; margin-bottom: -22px; }
 .pair-scene .pair-character { position: absolute; bottom: 0; width: 126px; }
+.personal-scene { position: relative; display: flex; align-items: flex-end; justify-content: center; min-height: 210px; }
+.personal-scene .character { width: 190px; margin: 0; filter: drop-shadow(0 0 18px #ff6d9f42); }
+.personal-scene .hero-bubble { right: 20px; }
+.onboarding-screen { min-height: 100vh; }
+.onboarding-step { color: var(--muted-2); font-size: 10px; font-weight: 800; letter-spacing: .1em; }
+.onboarding-hero { position: relative; display: grid; grid-template-columns: 1fr 140px; gap: 8px; align-items: center; min-height: 220px; margin: 8px 0 16px; padding: 24px 20px 8px; overflow: hidden; border: 1px solid #ff7ab133; border-radius: 24px; background: radial-gradient(circle at 80% 20%, #ff6d9f2b, transparent 42%), linear-gradient(145deg, #2b1b35, #171321 70%); }
+.onboarding-hero::after { content: ""; position: absolute; width: 180px; height: 180px; right: -50px; bottom: -75px; border-radius: 50%; background: #8d70ff28; filter: blur(8px); }
+.onboarding-copy { position: relative; z-index: 1; }
+.onboarding-copy h1 { margin: 10px 0; font-size: clamp(28px, 8vw, 42px); line-height: .96; }
+.onboarding-copy p { max-width: 290px; margin: 0; color: var(--muted); font-size: 12px; line-height: 1.55; }
+.onboarding-character { position: relative; z-index: 1; align-self: end; }
+.onboarding-character .character { width: 150px; margin: 0; filter: drop-shadow(0 0 20px #ff6d9f55); }
+.onboarding-editor { margin-top: 0; border-color: #ff6d9f66; box-shadow: 0 18px 50px #0003, 0 0 28px #ff6d9f12; }
+.editor-identity { display: flex; align-items: center; gap: 8px; margin: -4px 0 14px; color: var(--muted); font-size: 11px; }
+.identity-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--pink-2); box-shadow: 0 0 12px var(--pink-2); }
+.personal-preview { align-items: center; }
+.personal-thumb { display: grid; place-items: end center; width: 76px; height: 74px; overflow: hidden; border: 1px solid #ff7ab14a; border-radius: 18px; background: radial-gradient(circle at 50% 10%, #ff6d9f25, transparent 65%), #191522; }
+.personal-thumb .character { width: 86px; margin: 0 -4px -14px; }
 .pair-scene .pair-character .character { width: 126px; margin: 0; }
 .pair-scene .pair-feminine { left: -9px; z-index: 2; transform: rotate(-4deg); }
 .pair-scene .pair-masculine { right: -8px; z-index: 1; transform: rotate(4deg) scale(.94); }
@@ -275,5 +293,5 @@ h2 { margin-bottom: 0; font-size: 20px; letter-spacing: -.035em; }
 @keyframes toast-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes spin { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; transition-duration: .01ms !important; } }
-@media (min-width: 680px) { .app-shell { padding-top: 28px; } .home-hero { min-height: 390px; padding: 42px 40px 28px; grid-template-columns: minmax(0, 1fr) 210px; } .hero-character { width: 210px; } .pair-scene { height: 275px; } .pair-scene .pair-character, .pair-scene .pair-character .character { width: 145px; } .section-block, .bot-card, .free-mode-note { margin-top: 36px; } .stats-row { margin-bottom: 38px; } }
+@media (min-width: 680px) { .app-shell { padding-top: 28px; } .home-hero { min-height: 390px; padding: 42px 40px 28px; grid-template-columns: minmax(0, 1fr) 210px; } .hero-character { width: 210px; } .personal-scene .character { width: 220px; } .pair-scene { height: 275px; } .pair-scene .pair-character, .pair-scene .pair-character .character { width: 145px; } .onboarding-hero { min-height: 300px; padding: 36px 40px 18px; grid-template-columns: 1fr 220px; } .onboarding-character .character { width: 220px; } .section-block, .bot-card, .free-mode-note { margin-top: 36px; } .stats-row { margin-bottom: 38px; } }
 @media (max-width: 390px) { .home-hero { grid-template-columns: minmax(0, 1fr) 108px; padding: 28px 17px 20px; } .hero-character { width: 108px; } .hero-character .character { width: 125px; margin-right: -13px; } .pair-scene { height: 215px; margin-right: -7px; } .pair-scene .pair-character, .pair-scene .pair-character .character { width: 109px; } .hero-bubble { right: 4px; } .hero-copy h1 { font-size: 31px; } .stats-row span { font-size: 8px; } .stats-row strong { font-size: 16px; } }
