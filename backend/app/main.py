@@ -1,5 +1,6 @@
 from contextlib import asynccontextmanager
 
+from aiogram.types import BotCommand
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -18,6 +19,12 @@ from bot.main import bot
 async def lifespan(_: FastAPI):
     await initialize_database()
     if settings.environment == "production" and settings.telegram_webhook_url and settings.webhook_secret:
+        await bot.set_my_commands([
+            BotCommand(command="start", description="Открыть Knowly"),
+            BotCommand(command="help", description="Как играть"),
+            BotCommand(command="terms", description="Конфиденциальность"),
+            BotCommand(command="paysupport", description="Поддержка оплаты"),
+        ])
         await bot.set_webhook(
             url=settings.telegram_webhook_url,
             secret_token=settings.webhook_secret,

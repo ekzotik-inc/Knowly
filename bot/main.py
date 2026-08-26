@@ -1,11 +1,10 @@
-from __future__ import annotations
-
 import asyncio
 import logging
+from urllib.parse import quote
 
 from aiogram import Bot, Dispatcher, F
-from aiogram.filters import CommandStart
-from aiogram.types import Message, PreCheckoutQuery
+from aiogram.filters import Command, CommandStart
+from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, Message, PreCheckoutQuery, WebAppInfo
 from sqlalchemy import select
 
 from app.core.config import settings
@@ -25,12 +24,44 @@ bot = Bot(settings.telegram_bot_token)
 dp = Dispatcher()
 
 
+def app_keyboard(url: str) -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text="Открыть Knowly ↗", web_app=WebAppInfo(url=url))]])
+
+
+def start_app_url(message: Message) -> str:
+    base_url = settings.webapp_url.rstrip("/")
+    payload = (message.text or "").split(maxsplit=1)
+    if len(payload) == 2 and payload[1].strip():
+        return f"{base_url}/?startapp={quote(payload[1].strip())}"
+    return base_url
+
+
 @dp.message(CommandStart())
 async def start(message: Message) -> None:
     await message.answer(
-        "Добро пожаловать в Knowly. Откройте Mini App, чтобы создать тест "
-        "или пройти тест друга."
+        "Привет! Я Knowly — маленькая игра, которая показывает, кто действительно тебя знает.\n\n"
+        "Создай свой тест или открой игру друга. Ответы сохранятся, а результат можно сразу отправить в чат.",
+        reply_markup=app_keyboard(start_app_url(message)),
     )
+
+
+@dp.message(Command("help"))
+async def help_command(message: Message) -> None:
+    await message.answer(
+        "В Knowly можно создать тест о себе, поделиться им с друзьями и пройти чужую игру.\n\n"
+        "Нажми кнопку ниже, чтобы открыть Mini App.",
+        reply_markup=app_keyboard(settings.webapp_url.rstrip("/")),
+    )
+
+
+@dp.message(Command("terms"))
+async def terms(message: Message) -> None:
+    await message.answer("Knowly использует Telegram-авторизацию и хранит только данные, необходимые для работы профиля, игр и результатов.")
+
+
+@dp.message(Command("paysupport"))
+async def pay_support(message: Message) -> None:
+    await message.answer("Платные функции пока отключены: Knowly работает в бесплатном тестовом режиме.")
 
 
 @dp.pre_checkout_query()
@@ -46,10 +77,7 @@ async def pre_checkout(query: PreCheckoutQuery) -> None:
         if decision.accepted:
             await query.answer(ok=True)
         else:
-            await query.answer(
-                ok=False,
-                error_message="Не удалось подтвердить заказ. Попробуйте создать счёт заново.",
-            )
+            await query.answer(ok=False, error_message="Не удалось подтвердить заказ. Попробуйте создать счёт заново.")
 
 
 @dp.message(F.successful_payment)
@@ -60,14 +88,12 @@ async def successful_payment(message: Message) -> None:
 
     async with SessionLocal() as db:
         try:
-            result = await db.execute(
-                select(User).where(User.telegram_id == message.from_user.id)
-            )
+            result = await db.execute(select(User).where(User.telegram_id == message.from_user.id))
             user = result.scalar_one_or_none()
             if user is None:
                 raise PaymentError("user not found")
 
-            order = await mark_successful_payment(
+            await mark_successful_payment(
                 db,
                 payload=payment.invoice_payload,
                 telegram_user_id=message.from_user.id,

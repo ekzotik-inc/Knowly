@@ -36,6 +36,8 @@ services:
     envVars:
       - key: VITE_API_URL
         sync: false
+      - key: VITE_BOT_USERNAME
+        value: I_KNOWUbot
 
 databases:
   - name: knowly-db
