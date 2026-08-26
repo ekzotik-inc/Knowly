@@ -15,8 +15,11 @@ class Settings(BaseSettings):
     session_secret: str = Field(min_length=32)
     database_url: str = "postgresql+asyncpg://knowly:knowly@localhost:5432/knowly"
     webapp_url: str = "http://localhost:5173"
+    telegram_webhook_url: str | None = None
+    webhook_secret: str | None = None
     allowed_origins: str = "http://localhost:5173"
     environment: str = "development"
+    payments_enabled: bool = False
     auth_data_max_age_seconds: int = 300
     session_ttl_days: int = 30
 

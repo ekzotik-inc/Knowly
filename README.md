@@ -16,9 +16,9 @@ MVP использует composable SVG-рендерер с градиентам
 |---|---|---|
 | Mini App | React, TypeScript, Vite | Каталог premium-функций и запуск Telegram invoice |
 | API | FastAPI, Python 3.12+, SQLAlchemy async | Telegram auth, каталог, заказы и entitlements |
-| Bot worker | aiogram 3.x | `/start`, pre-checkout и successful payment updates |
+| Telegram updates | aiogram 3.x через FastAPI webhook | `/start`, pre-checkout и successful payment updates |
 | Database | PostgreSQL | Users, products, orders, entitlements |
-| Hosting | Render | API, worker, static frontend и PostgreSQL |
+| Hosting | Render | бесплатный API Web Service, static frontend и PostgreSQL |
 
 ## Монетизация через Telegram Stars
 
@@ -59,13 +59,7 @@ pip install -r requirements.txt
 uvicorn app.main:app --reload --port 8000
 ```
 
-В другом терминале запустите bot worker:
-
-```bash
-cd /path/to/Knowly
-. backend/.venv/bin/activate
-python -m bot.main
-```
+Для локальной разработки bot handlers можно запускать polling-командой выше. В бесплатном Render deployment отдельный worker не создаётся: FastAPI принимает Telegram updates через `POST /telegram/webhook`.
 
 Запустите Mini App:
 
@@ -76,6 +70,8 @@ npm run dev
 ```
 
 Для работы внутри Telegram настройте URL Mini App в BotFather. Для локальной разработки используйте Telegram test environment или публичный HTTPS-туннель; обычный `localhost` не будет доступен Telegram-клиенту как production Mini App URL.
+
+В бесплатном тестовом режиме задайте `PAYMENTS_ENABLED=false`: каталог Stars будет пустым, invoice endpoint отключён, а игровая часть и авторизация продолжат работать. Для webhook production-настройки задайте `TELEGRAM_WEBHOOK_URL=https://<api-host>/telegram/webhook` и отдельный длинный `WEBHOOK_SECRET`. Telegram webhook устанавливается автоматически при старте API.
 
 ## API
 
@@ -96,6 +92,9 @@ npm run dev
 | `GET` | `/api/v1/profile` | Получить игровой профиль и конфигурацию персонажа |
 | `PUT` | `/api/v1/profile` | Обновить имя и аватар игрового профиля |
 | `GET` | `/api/v1/statistics/me` | Получить базовую статистику владельца |
+| `GET` | `/api/v1/progression` | Получить XP и уровень пользователя |
+| `GET` | `/api/v1/progression/achievements` | Получить достижения пользователя |
+| `POST` | `/telegram/webhook` | Получать Telegram updates через защищённый webhook |
 
 Первичный запрос авторизации передаёт исходную строку Mini App так:
 
@@ -117,7 +116,7 @@ Backend проверяет HMAC-SHA-256 hash по алгоритму Telegram, �
 
 ## Render
 
-Blueprint содержит отдельные сервисы для API, bot worker и static Mini App, а также PostgreSQL. После создания сервисов задайте `TELEGRAM_BOT_TOKEN`, `SESSION_SECRET`, `WEBAPP_URL`, `ALLOWED_ORIGINS` и `VITE_API_URL` в Render Dashboard. Секреты не добавляйте в Git.
+Для бесплатного запуска Blueprint содержит API Web Service с webhook, static Mini App и PostgreSQL free. Отдельный background worker намеренно не создаётся, чтобы не добавлять платный compute-сервис. После создания сервисов задайте `TELEGRAM_BOT_TOKEN`, `SESSION_SECRET`, `WEBAPP_URL`, `TELEGRAM_WEBHOOK_URL`, `WEBHOOK_SECRET`, `ALLOWED_ORIGINS`, `PAYMENTS_ENABLED=false` и `VITE_API_URL` в Render Dashboard. Секреты не добавляйте в Git.
 
 ## Статус
 

@@ -46,6 +46,8 @@ class EntitlementResponse(BaseModel):
 async def list_products(
     db: AsyncSession = Depends(get_db),
 ) -> list[ProductResponse]:
+    if not settings.payments_enabled:
+        return []
     result = await db.execute(select(Product).where(Product.is_active.is_(True)).order_by(Product.stars))
     return [
         ProductResponse(
@@ -65,6 +67,8 @@ async def create_invoice(
     current_user: CurrentUser,
     db: AsyncSession = Depends(get_db),
 ) -> InvoiceResponse:
+    if not settings.payments_enabled:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Payments are disabled in test mode")
     try:
         async with Bot(settings.telegram_bot_token) as bot:
             order, invoice_link = await create_invoice_link(
@@ -97,6 +101,8 @@ async def list_entitlements(
     current_user: CurrentUser,
     db: AsyncSession = Depends(get_db),
 ) -> list[EntitlementResponse]:
+    if not settings.payments_enabled:
+        return []
     result = await db.execute(
         select(Entitlement).where(Entitlement.user_id == current_user.id)
     )
