@@ -1,0 +1,58 @@
+services:
+  - type: web
+    name: knowly-api
+    runtime: python
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false
+      - key: SESSION_SECRET
+        sync: false
+      - key: DATABASE_URL
+        fromDatabase:
+          name: knowly-db
+          property: connectionString
+      - key: WEBAPP_URL
+        sync: false
+      - key: ALLOWED_ORIGINS
+        sync: false
+      - key: ENVIRONMENT
+        value: production
+
+  - type: worker
+    name: knowly-bot
+    runtime: python
+    rootDir: .
+    buildCommand: pip install -r backend/requirements.txt
+    startCommand: python -m bot.main
+    envVars:
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false
+      - key: SESSION_SECRET
+        sync: false
+      - key: DATABASE_URL
+        fromDatabase:
+          name: knowly-db
+          property: connectionString
+      - key: WEBAPP_URL
+        sync: false
+      - key: ALLOWED_ORIGINS
+        sync: false
+      - key: ENVIRONMENT
+        value: production
+
+  - type: web
+    name: knowly-mini-app
+    runtime: static
+    rootDir: frontend
+    buildCommand: npm ci && npm run build
+    staticPublishPath: dist
+    envVars:
+      - key: VITE_API_URL
+        sync: false
+
+databases:
+  - name: knowly-db
+    plan: free
