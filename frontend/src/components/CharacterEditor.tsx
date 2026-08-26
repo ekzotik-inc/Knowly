@@ -1,3 +1,4 @@
+import { defaultCharacter, masculineCharacter } from "./Character";
 import type { CharacterConfig } from "./character-types";
 
 type CharacterEditorProps = {
@@ -27,7 +28,14 @@ const choices: Choice[] = [
 ];
 
 export function CharacterEditor({ config, onChange, onSave, saving = false, onboarding = false }: CharacterEditorProps) {
-  const update = (key: ChoiceKey, value: string) => onChange({ ...config, [key]: value } as CharacterConfig);
+  const update = (key: ChoiceKey, value: string) => {
+    if (key === "gender") {
+      const preset = value === "masculine" ? masculineCharacter : defaultCharacter;
+      onChange({ ...preset, skin_tone: config.skin_tone });
+      return;
+    }
+    onChange({ ...config, [key]: value } as CharacterConfig);
+  };
   return <section className={`character-editor ${onboarding ? "onboarding-editor" : ""}`}>
     <div className="editor-heading"><div><strong>{onboarding ? "Создай своего персонажа" : "Измени своего персонажа"}</strong><small>{onboarding ? "Это твой companion — настрой его под себя" : "Ты можешь изменить его в любой момент"}</small></div><span>{onboarding ? "первый шаг" : "персонализация"}</span></div>
     <div className="editor-identity"><span className="identity-dot" />{config.gender === "masculine" ? "Твой персонаж — он" : "Твой персонаж — она"}</div>
